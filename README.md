@@ -7,13 +7,13 @@
 - Старт/Стоп теста скорости, анимированный индикатор (ProgressRing)
 - Вывод значений Ping / Download / Upload
 - Логи в UI и в консоль
-- Сохранение результатов в `fluent_speedtest/data/results.jsonl`
+- Сохранение результатов в `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`
 - История: таблица, экспорт CSV, очистка
 
 ## Запуск
 1. Установите зависимости:
    ```bash
-   pip install -r fluent_speedtest/requirements.txt
+   pip install -r requirements.txt
    ```
 2. Запустите приложение (из каталога, содержащего папку `fluent_speedtest/`):
    ```bash
@@ -69,24 +69,26 @@ python -m fluent_speedtest
 ```
 fluent_speedtest/
   core/
-    settings.py        # настройки (Documents/SpeedtestNextGen/settings.json)
-    speedtest_client.py# обёртка над speedtest-cli (выбор/поиск сервера, тест)
-    worker.py          # фоновый исполнитель для GUI (QThread + сигналы)
-    storage.py         # сохранение/загрузка результатов, экспорт CSV
+    settings.py         # настройки (Documents/SpeedtestNextGen/settings.json)
+    speedtest_client.py # обёртка над speedtest-cli (выбор/поиск сервера, тест)
+    worker.py           # фоновый исполнитель для GUI (QThread + сигналы)
+    storage.py          # сохранение/загрузка результатов, экспорт CSV
   ui/
-    test_interface.py      # экран запуска теста
-    servers_interface.py   # выбор/обновление списка серверов
-    history_interface.py   # история результатов
-    settings_interface.py  # настройки (тема, единицы, логи)
-  data/
-    results.jsonl      # результаты в формате JSON Lines
-  app_window.py        # главное окно и навигация
-  logging_utils.py     # логирование в консоль и в UI
-  main.py              # точка входа при запуске скриптом
-  __main__.py          # точка входа при запуске модулем: python -m fluent_speedtest
+    test_interface.py       # экран запуска теста
+    servers_interface.py    # выбор/обновление списка серверов
+    history_interface.py    # история результатов
+    settings_interface.py   # настройки (тема, единицы, логи)
+  assets/
+    app.ico             # иконка приложения (для сборки exe)
+  app_window.py         # главное окно и навигация
+  logging_utils.py      # логирование в консоль и в UI
+  main.py               # точка входа при запуске скриптом
+  __main__.py           # точка входа при запуске модулем: python -m fluent_speedtest
   README.md
   requirements.txt
 ```
+
+> Примечание: Результаты тестов теперь сохраняются в Документах пользователя: `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`.
 
 ## Настройки
 
@@ -112,7 +114,7 @@ fluent_speedtest/
   - «Сбросить выбор» — автоподбор лучшего сервера
 
 - Раздел «История»:
-  - «Обновить» — перечитать `data/results.jsonl`
+  - «Обновить» — перечитать `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`
   - «Экспорт CSV» — выгружает в выбранный путь
   - «Очистить» — очищает историю
 
@@ -129,7 +131,7 @@ fluent_speedtest/
 
 ## Формат результатов
 
-Каждый тест сохраняется одной строкой в `data/results.jsonl`:
+Каждый тест сохраняется одной строкой в `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`:
 
 ```json
 {
@@ -169,6 +171,18 @@ fluent_speedtest/
   - `python -m fluent_speedtest` — запуск GUI
   - Модули GUI: в папке `ui/`
   - Логика: в папке `core/`
+
+## Сборка (Nuitka)
+
+Тестировалась сборка под Windows (MinGW) в режиме standalone. Пример однострочной команды:
+
+```powershell
+python -m nuitka --standalone --mingw64 --enable-plugin=pyqt5 --include-qt-plugins=platforms,styles,iconengines,imageformats,platformthemes,printsupport --include-package=qfluentwidgets --include-package-data=qfluentwidgets --include-package=qframelesswindow --windows-icon-from-ico=assets/app.ico --windows-company-name="By Sparki" --windows-product-name="SpeedTest Nextgen" --windows-file-description="SpeedTest" --windows-file-version=1.0.1 --windows-product-version=1.0.1 --windows-console-mode=disable --output-dir=build --output-filename=SpeedTestNextgen main.py
+```
+
+- Результат: `build\main.dist\SpeedTestNextgen.exe`
+- Иконка exe берётся из `assets/app.ico`
+- Данные сохраняются в: `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`
 
 ## Благодарности
 
