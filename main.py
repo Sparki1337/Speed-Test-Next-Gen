@@ -5,7 +5,7 @@ import platform
 from pathlib import Path
 
 # Fallback: добавить локальную папку qfluentwidgets, если пакет не установлен
-QFLUENT_LOCAL_PATH = r"c:\\Users\\Sparki\\Desktop\\Программы\\Speed\\PyQt-Fluent-Widgets-master"
+QFLUENT_LOCAL_PATH = r"c:\\Users\\Sparki\\Desktop\\C:\Users\\Sparki\\Desktop\\Pyqt_Fluent\\PyQt-Fluent-Widgets-master"
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
