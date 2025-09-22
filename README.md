@@ -40,9 +40,7 @@
   - speedtest-cli
 
 ## Скриншоты
-
-> Добавьте сюда скриншоты приложения (главный экран, список серверов, история). Например:
-> `docs/screenshots/main.png`, `docs/screenshots/servers.png`, `docs/screenshots/history.png`
+> `docs/screenshots/1.png`, `docs/screenshots/2.png`, `docs/screenshots/3.png` , `docs/screenshots/4.png`
 
 ## Быстрый старт
 
