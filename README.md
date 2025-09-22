@@ -40,7 +40,18 @@
   - speedtest-cli
 
 ## Скриншоты
-> `docs/screenshots/1.png`, `docs/screenshots/2.png`, `docs/screenshots/3.png` , `docs/screenshots/4.png`
+
+### Главный экран
+![Главный экран](docs/screenshots/1.png)
+
+### Выбор сервера
+![Выбор сервера](docs/screenshots/2.png)
+
+### История тестов
+![История тестов](docs/screenshots/3.png)
+
+### Настройки
+![Настройки](docs/screenshots/4.png)
 
 ## Быстрый старт
 
