@@ -2,10 +2,6 @@
 import os
 import sys
 import platform
-from pathlib import Path
-
-# Fallback: добавить локальную папку qfluentwidgets, если пакет не установлен
-QFLUENT_LOCAL_PATH = r"c:\\Users\\Sparki\\Desktop\\C:\Users\\Sparki\\Desktop\\Pyqt_Fluent\\PyQt-Fluent-Widgets-master"
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
@@ -33,13 +29,12 @@ def main():
     app.setApplicationName('Fluent Speedtest')
     app.setOrganizationName('FluentSpeed')
 
-    # Импорт qfluentwidgets после создания QApplication, с fallback на локальную папку
+    # Импорт qfluentwidgets после создания QApplication
     try:
         from qfluentwidgets import setTheme, Theme
     except Exception:
-        if os.path.isdir(QFLUENT_LOCAL_PATH) and QFLUENT_LOCAL_PATH not in sys.path:
-            sys.path.append(QFLUENT_LOCAL_PATH)
-        from qfluentwidgets import setTheme, Theme  # type: ignore
+        print('Требуется установленный пакет PyQt-Fluent-Widgets. Установите его и попробуйте снова.')
+        return
 
     # Логирование с выводом в UI и настройки (хранятся в C:/Users/<User>/Documents/SpeedtestNextGen/settings.json)
     emitter = LogEmitter()

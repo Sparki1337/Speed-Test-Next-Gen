@@ -32,7 +32,7 @@ class SettingsInterface(QWidget):
         self.title = SubtitleLabel('Настройки', self)
         self.title.setAlignment(Qt.AlignHCenter)
 
-        # Units
+        # Единицы скорости
         self.unitsRow = QHBoxLayout()
         self.unitsLabel = BodyLabel('Единицы скорости:')
         self.unitsBox = ComboBox(self)
@@ -40,7 +40,7 @@ class SettingsInterface(QWidget):
         self.unitsRow.addWidget(self.unitsLabel)
         self.unitsRow.addWidget(self.unitsBox)
 
-        # Theme
+        # Тема
         self.themeRow = QHBoxLayout()
         self.themeLabel = BodyLabel('Тема:')
         self.themeBox = ComboBox(self)
@@ -48,7 +48,7 @@ class SettingsInterface(QWidget):
         self.themeRow.addWidget(self.themeLabel)
         self.themeRow.addWidget(self.themeBox)
 
-        # Logs toggle
+        # Включить логи
         self.logsRow = QHBoxLayout()
         self.logsLabel = BodyLabel('Логи:')
         self.logsSwitch = SwitchButton('Включить логи', self)
@@ -61,7 +61,7 @@ class SettingsInterface(QWidget):
         self.vBox.addLayout(self.logsRow)
         self.vBox.addStretch(1)
 
-        # Load saved
+        # Загрузка сохранённых настроек
         units = self.settings.get('units', 'Mbps')
         self.unitsBox.setCurrentText(units)
         theme = self.settings.get('theme', 'Dark')
@@ -70,7 +70,7 @@ class SettingsInterface(QWidget):
         self.logsSwitch.setChecked(logs_enabled)
         self.logsSwitch.setText('Включить логи' if logs_enabled else 'Отключить логи')
 
-        # Events
+        # События
         self.unitsBox.currentTextChanged.connect(self.on_units_changed)
         self.themeBox.currentTextChanged.connect(self.on_theme_changed)
         self.logsSwitch.checkedChanged.connect(self.on_logs_toggled)

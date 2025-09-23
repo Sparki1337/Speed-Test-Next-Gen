@@ -1,16 +1,14 @@
 # coding: utf-8
-from pathlib import Path
-
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem, QFileDialog
+from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem
 
-from qfluentwidgets import PushButton, PrimaryPushButton, SubtitleLabel, InfoBar, InfoBarPosition, TableWidget
+from qfluentwidgets import PushButton, SubtitleLabel, InfoBar, InfoBarPosition, TableWidget
 
 try:
-    from ..core.storage import load_results, export_csv, clear_results
+    from ..core.storage import load_results, clear_results
 except ImportError:
     # Запасной импорт при запуске из каталога
-    from core.storage import load_results, export_csv, clear_results  # type: ignore
+    from core.storage import load_results, clear_results  # type: ignore
 
 
 class HistoryInterface(QWidget):
@@ -36,11 +34,9 @@ class HistoryInterface(QWidget):
 
         self.buttonsRow = QHBoxLayout()
         self.refreshBtn = PushButton('Обновить', self)
-        self.exportBtn = PrimaryPushButton('Экспорт CSV', self)
         self.clearBtn = PushButton('Очистить', self)
         self.buttonsRow.addStretch(1)
         self.buttonsRow.addWidget(self.refreshBtn)
-        self.buttonsRow.addWidget(self.exportBtn)
         self.buttonsRow.addWidget(self.clearBtn)
         self.buttonsRow.addStretch(1)
 
@@ -49,7 +45,6 @@ class HistoryInterface(QWidget):
         self.vBox.addWidget(self.table)
 
         self.refreshBtn.clicked.connect(self.refresh)
-        self.exportBtn.clicked.connect(self.export_csv)
         self.clearBtn.clicked.connect(self.clear)
 
         self.refresh()
@@ -84,16 +79,6 @@ class HistoryInterface(QWidget):
                 self.table.setItem(row, col, item)
 
         self.table.resizeColumnsToContents()
-
-    def export_csv(self):
-        path, _ = QFileDialog.getSaveFileName(self, 'Экспорт в CSV', str(Path.home() / 'speedtest_results.csv'), 'CSV (*.csv)')
-        if not path:
-            return
-        try:
-            export_csv(Path(path))
-            self._info('Экспорт завершён')
-        except Exception as e:
-            self._error(str(e))
 
     def clear(self):
         try:

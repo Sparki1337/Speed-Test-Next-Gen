@@ -13,6 +13,7 @@ from qfluentwidgets import (
     InfoBar,
     InfoBarPosition,
     TableWidget,
+    CheckBox,
 )
 
 logger = logging.getLogger(__name__)
@@ -51,6 +52,8 @@ class ServersInterface(QWidget):
         self.setObjectName('servers-interface')
 
         self.settings = get_settings()
+        self._servers: List[Dict] = []
+        self._favorite_ids = set(int(x) for x in (self.settings.get('favorite_server_ids', []) or []) if x)
 
         # Интерфейс
         self.vBox = QVBoxLayout(self)
@@ -64,8 +67,8 @@ class ServersInterface(QWidget):
         self._update_current_label()
 
         self.table = TableWidget(self)
-        self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(['ID', 'Провайдер', 'Город', 'Страна', 'Хост'])
+        self.table.setColumnCount(6)
+        self.table.setHorizontalHeaderLabels(['⭐', 'ID', 'Провайдер', 'Город', 'Страна', 'Хост'])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.verticalHeader().setVisible(False)
         self.table.setAlternatingRowColors(True)
@@ -73,13 +76,19 @@ class ServersInterface(QWidget):
         self.table.setSelectionMode(self.table.SingleSelection)
 
         self.buttonsRow = QHBoxLayout()
+        self.onlyFav = CheckBox('Только избранные', self)
         self.refreshBtn = PushButton('Обновить', self)
         self.selectBtn = PrimaryPushButton('Выбрать сервер', self)
         self.clearBtn = PushButton('Сбросить выбор', self)
+        self.addFavBtn = PushButton('В избранное ⭐', self)
+        self.removeFavBtn = PushButton('Убрать из избранных', self)
+        self.buttonsRow.addWidget(self.onlyFav)
         self.buttonsRow.addStretch(1)
         self.buttonsRow.addWidget(self.refreshBtn)
         self.buttonsRow.addWidget(self.selectBtn)
         self.buttonsRow.addWidget(self.clearBtn)
+        self.buttonsRow.addWidget(self.addFavBtn)
+        self.buttonsRow.addWidget(self.removeFavBtn)
         self.buttonsRow.addStretch(1)
 
         self.vBox.addWidget(self.title)
@@ -95,6 +104,9 @@ class ServersInterface(QWidget):
         self.refreshBtn.clicked.connect(self.refresh)
         self.selectBtn.clicked.connect(self.select_server)
         self.clearBtn.clicked.connect(self.clear_selection)
+        self.addFavBtn.clicked.connect(self.add_favorite)
+        self.removeFavBtn.clicked.connect(self.remove_favorite)
+        self.onlyFav.stateChanged.connect(lambda _v: self._populate_table())
 
         # начальный загрузчик
         self.refresh()
@@ -147,13 +159,24 @@ class ServersInterface(QWidget):
             self._loader = None
 
     def _on_servers_loaded(self, servers: List[Dict]):
+        self._servers = servers
+        self._populate_table()
+
+    def _populate_table(self):
+        servers = self._servers
+        if self.onlyFav.isChecked():
+            servers = [sv for sv in servers if self._is_favorite(sv.get('id'))]
+
         self.table.setRowCount(len(servers))
         sid_selected = self.settings.get('server_id', None)
-
         selected_row = -1
+
         for row, sv in enumerate(servers):
+            sid = sv.get('id')
+            star = '★' if self._is_favorite(sid) else ''
             items = [
-                QTableWidgetItem(str(sv.get('id') or '')),
+                QTableWidgetItem(star),
+                QTableWidgetItem(str(sid or '')),
                 QTableWidgetItem(str(sv.get('sponsor') or '')),
                 QTableWidgetItem(str(sv.get('name') or '')),
                 QTableWidgetItem(str(sv.get('country') or '')),
@@ -163,9 +186,8 @@ class ServersInterface(QWidget):
                 item.setFlags(item.flags() ^ Qt.ItemIsEditable)
                 self.table.setItem(row, col, item)
 
-            # Попытка выбора текущего сервера
             try:
-                if sid_selected and int(sv.get('id')) == int(sid_selected):
+                if sid_selected and sid and int(sid) == int(sid_selected):
                     selected_row = row
             except Exception:
                 pass
@@ -174,20 +196,59 @@ class ServersInterface(QWidget):
         if selected_row >= 0:
             self.table.selectRow(selected_row)
 
-    # Действия
-    def select_server(self):
+    # избранное
+    def _is_favorite(self, sid) -> bool:
+        try:
+            return int(sid) in self._favorite_ids
+        except Exception:
+            return False
+
+    def _save_favorites(self):
+        self.settings.set('favorite_server_ids', sorted(self._favorite_ids))
+
+    def _get_selected_sid(self) -> Optional[int]:
         row = self.table.currentRow()
         if row < 0:
-            self._warn('Выберите строку в таблице')
-            return
-        item = self.table.item(row, 0)
+            return None
+        item = self.table.item(row, 1)  # колонка ID
         if not item:
-            self._error('Не удалось прочитать ID сервера')
-            return
+            return None
         try:
-            sid = int(item.text())
+            return int(item.text())
         except Exception:
-            self._error('Некорректный ID сервера')
+            return None
+
+    def add_favorite(self):
+        sid = self._get_selected_sid()
+        if sid is None:
+            self._warn('Выберите сервер')
+            return
+        if sid in self._favorite_ids:
+            self._info('Сервер уже в избранных')
+            return
+        self._favorite_ids.add(sid)
+        self._save_favorites()
+        self._info(f'Добавлено в избранные: ID={sid}')
+        self._populate_table()
+
+    def remove_favorite(self):
+        sid = self._get_selected_sid()
+        if sid is None:
+            self._warn('Выберите сервер')
+            return
+        if sid not in self._favorite_ids:
+            self._warn('Сервера нет в избранных')
+            return
+        self._favorite_ids.discard(sid)
+        self._save_favorites()
+        self._info(f'Удалено из избранных: ID={sid}')
+        self._populate_table()
+
+    # Действия
+    def select_server(self):
+        sid = self._get_selected_sid()
+        if sid is None:
+            self._warn('Выберите строку в таблице')
             return
         self.settings.set('server_id', sid)
         self._update_current_label()

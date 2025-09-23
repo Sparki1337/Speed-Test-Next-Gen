@@ -24,6 +24,7 @@ _DEFAULTS: Dict[str, Any] = {
     "units": "Mbps",         # Mbps | MB/s
     "theme": "Dark",         # Dark | Light
     "logs_enabled": True,     # Включены ли логи (UI + консоль)
+    "favorite_server_ids": [],  # список избранных серверов (IDs)
 }
 
 
@@ -43,7 +44,7 @@ class SettingsManager(QObject):
                 self._data = json.loads(self._path.read_text(encoding="utf-8"))
             except Exception:
                 self._data = {}
-        # apply defaults
+        # применяем значения по умолчанию
         for k, v in _DEFAULTS.items():
             self._data.setdefault(k, v)
 
@@ -61,7 +62,7 @@ class SettingsManager(QObject):
         self.changed.emit(key, value)
 
 
-# singleton
+# синглтон
 _settings_singleton: SettingsManager | None = None
 
 

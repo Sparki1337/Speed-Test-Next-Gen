@@ -8,7 +8,7 @@
 - Вывод значений Ping / Download / Upload
 - Логи в UI и в консоль
 - Сохранение результатов в `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`
-- История: таблица, экспорт CSV, очистка
+- История: таблица, очистка
 
 ## Запуск
 1. Установите зависимости:
@@ -25,7 +25,7 @@
    python main.py
    ```
 
-> Примечание: если пакет `qfluentwidgets` не установлен, приложение попробует использовать локальную папку `PyQt-Fluent-Widgets-master` в рабочем каталоге.
+> Примечание: для работы требуется установленный пакет `qfluentwidgets`.
 
 ---
 
@@ -81,7 +81,7 @@ fluent_speedtest/
     settings.py         # настройки (Documents/SpeedtestNextGen/settings.json)
     speedtest_client.py # обёртка над speedtest-cli (выбор/поиск сервера, тест)
     worker.py           # фоновый исполнитель для GUI (QThread + сигналы)
-    storage.py          # сохранение/загрузка результатов, экспорт CSV
+    storage.py          # сохранение/загрузка результатов
   ui/
     test_interface.py       # экран запуска теста
     servers_interface.py    # выбор/обновление списка серверов
@@ -124,7 +124,6 @@ fluent_speedtest/
 
 - Раздел «История»:
   - «Обновить» — перечитать `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`
-  - «Экспорт CSV» — выгружает в выбранный путь
   - «Очистить» — очищает историю
 
 ## Поведение выбора сервера и отмены
@@ -170,7 +169,7 @@ fluent_speedtest/
   - В проекте есть корректное завершение фонового потока. Если вы закрываете приложение во время активного теста, дождитесь завершения или нажмите «Стоп».
 
 - Нет установленного `qfluentwidgets`
-  - Приложение пытается использовать локальную папку `PyQt-Fluent-Widgets-master` (см. `main.py`, переменная `QFLUENT_LOCAL_PATH`). Убедитесь, что папка существует или установите пакет через pip.
+  - Установите пакет через pip: `pip install PyQt-Fluent-Widgets`
 
 ## Разработка
 
@@ -186,7 +185,7 @@ fluent_speedtest/
 Тестировалась сборка под Windows (MinGW) в режиме standalone. Пример однострочной команды:
 
 ```powershell
-python -m nuitka --standalone --mingw64 --enable-plugin=pyqt5 --include-qt-plugins=platforms,styles,iconengines,imageformats,platformthemes,printsupport --include-package=qfluentwidgets --include-package-data=qfluentwidgets --include-package=qframelesswindow --windows-icon-from-ico=assets/app.ico --windows-company-name="By Sparki" --windows-product-name="SpeedTest Nextgen" --windows-file-description="SpeedTest" --windows-file-version=1.0.1 --windows-product-version=1.0.1 --windows-console-mode=disable --output-dir=build --output-filename=SpeedTestNextgen main.py
+python -m nuitka --standalone --mingw64 --enable-plugin=pyqt5 --include-qt-plugins=platforms,styles,iconengines,imageformats,platformthemes,printsupport --include-package=qfluentwidgets --include-package-data=qfluentwidgets --include-package=qframelesswindow --windows-icon-from-ico=assets/app.ico --windows-company-name="By Sparki" --windows-product-name="SpeedTest Nextgen" --windows-file-description="SpeedTest" --windows-file-version=1.1.0 --windows-product-version=1.1.0 --windows-console-mode=disable --output-dir=build --output-filename=SpeedTestNextgen main.py
 ```
 
 - Результат: `build\main.dist\SpeedTestNextgen.exe`

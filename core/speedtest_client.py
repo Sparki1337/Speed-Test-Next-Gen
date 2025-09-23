@@ -83,7 +83,7 @@ class SpeedtestClient:
         assert last_err is not None
         raise last_err
 
-    def perform_test(self, cancel_event: threading.Event | None = None):
+    def perform_test(self, cancel_event: threading.Event | None = None, server_id_override: int | None = None):
         logger.info('Инициализация клиента Speedtest...')
         s = self._create_speedtest()
 
@@ -102,8 +102,8 @@ class SpeedtestClient:
             cancel_monitor = threading.Thread(target=_watch_cancel, name='st-cancel-watch', daemon=True)
             cancel_monitor.start()
 
-        # выбрать сервер из настроек, если задан
-        server_id = self.settings.get('server_id', None)
+        # выбрать сервер: приоритет у параметра server_id_override, иначе из настроек
+        server_id = server_id_override if server_id_override is not None else self.settings.get('server_id', None)
         if server_id:
             try:
                 sid = int(server_id)

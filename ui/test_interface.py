@@ -48,12 +48,12 @@ except ImportError:
         from PyQt5.QtWidgets import QTextBrowser as LogViewClass
 
 try:
-    from ..core.worker import SpeedtestWorker
+    from ..core.worker import SpeedtestWorker, PreciseSpeedtestWorker
     from ..core.storage import append_result
     from ..core.settings import get_settings
 except ImportError:
     # Запуск без пакета: импорт из локальной папки
-    from core.worker import SpeedtestWorker  # type: ignore
+    from core.worker import SpeedtestWorker, PreciseSpeedtestWorker  # type: ignore
     from core.storage import append_result  # type: ignore
     from core.settings import get_settings  # type: ignore
 
@@ -90,10 +90,12 @@ class TestInterface(QWidget):
 
         self.buttonsRow = QHBoxLayout()
         self.startBtn = PrimaryPushButton('Старт', self, icon=FIF.PLAY)
+        self.preciseBtn = PrimaryPushButton('Точный тест', self)
         self.stopBtn = PushButton('Стоп', self, icon=FIF.STOP_WATCH)
         self.stopBtn.setDisabled(True)
         self.buttonsRow.addStretch(1)
         self.buttonsRow.addWidget(self.startBtn)
+        self.buttonsRow.addWidget(self.preciseBtn)
         self.buttonsRow.addWidget(self.stopBtn)
         self.buttonsRow.addStretch(1)
 
@@ -111,10 +113,11 @@ class TestInterface(QWidget):
 
         # worker/thread
         self.thread: QThread = None
-        self.worker: SpeedtestWorker = None
+        self.worker = None  # SpeedtestWorker | PreciseSpeedtestWorker
 
         # events
         self.startBtn.clicked.connect(self.start_test)
+        self.preciseBtn.clicked.connect(self.start_precise_test)
         self.stopBtn.clicked.connect(self.stop_test)
 
         # connect UI logger emitter
@@ -187,6 +190,34 @@ class TestInterface(QWidget):
 
         self.thread.start()
 
+    def start_precise_test(self):
+        if self.thread is not None:
+            self._warn('Тест уже выполняется')
+            return
+
+        self.logView.clear()
+        self.startBtn.setDisabled(True)
+        self.preciseBtn.setDisabled(True)
+        self.stopBtn.setEnabled(True)
+        self.ring.show()
+
+        self.thread = QThread(self)
+        self.worker = PreciseSpeedtestWorker()
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run, type=Qt.QueuedConnection)
+        self.worker.stageChanged.connect(self._on_stage_changed)
+        # лог сигнал может не использоваться, но подключим на будущее
+        try:
+            self.worker.log.connect(self._append_log)  # type: ignore[attr-defined]
+        except Exception:
+            pass
+        self.worker.resultReady.connect(self._on_result)
+        self.worker.error.connect(self._on_error)
+        self.worker.finished.connect(self._on_finished)
+
+        self.thread.start()
+
     def stop_test(self):
         if self.worker:
             self.worker.cancel()
@@ -218,5 +249,6 @@ class TestInterface(QWidget):
             self.thread = None
             self.worker = None
             self.startBtn.setEnabled(True)
+            self.preciseBtn.setEnabled(True)
             self.stopBtn.setDisabled(True)
             self.ring.hide()

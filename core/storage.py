@@ -1,6 +1,5 @@
 # coding: utf-8
 import json
-from pathlib import Path
 from typing import List, Dict, Optional
 
 # Данные должны храниться там же, где и настройки: Documents/SpeedtestNextGen/
@@ -45,21 +44,3 @@ def clear_results() -> None:
     if RESULTS_FILE.exists():
         RESULTS_FILE.write_text('', encoding='utf-8')
 
-
-def export_csv(csv_path: Path) -> None:
-    import csv
-    rows = load_results()
-    fieldnames = [
-        'timestamp', 'ping_ms', 'download_bps', 'upload_bps',
-        'server.sponsor', 'server.name', 'server.country', 'server.host'
-    ]
-
-    with open(csv_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        writer.writerow(fieldnames)
-        for r in rows:
-            s = r.get('server', {})
-            writer.writerow([
-                r.get('timestamp'), r.get('ping_ms'), r.get('download_bps'), r.get('upload_bps'),
-                s.get('sponsor'), s.get('name'), s.get('country'), s.get('host')
-            ])

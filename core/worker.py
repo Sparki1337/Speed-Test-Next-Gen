@@ -109,3 +109,140 @@ class SpeedtestWorker(QObject):
                 self.stageChanged.emit('error')
                 self.error.emit(str(e))
                 self.finished.emit()
+
+
+class PreciseSpeedtestWorker(QObject):
+    """
+    Последовательно выполняет 3 теста на разных серверах и отдаёт среднее значение.
+    При наличии избранных серверов использует их с приоритетом.
+    """
+
+    stageChanged = pyqtSignal(str)       # init | servers | best | download | upload | saving | done | canceled | error
+    log = pyqtSignal(str)
+    resultReady = pyqtSignal(dict)       # средний результат по 3 прогонкам
+    error = pyqtSignal(str)
+    finished = pyqtSignal()
+
+    def __init__(self):
+        super().__init__()
+        self._cancel_event = Event()
+        self._settings = get_settings()
+
+    @pyqtSlot()
+    def cancel(self):
+        self._cancel_event.set()
+        logger.info('Отмена точного теста запрошена')
+
+    def _check_cancel(self) -> bool:
+        if self._cancel_event.is_set():
+            self.stageChanged.emit('canceled')
+            self.finished.emit()
+            return True
+        return False
+
+    def _pick_three_server_ids(self) -> list[int]:
+        # 1) избранные из настроек
+        fav_ids = []
+        try:
+            fav_ids = [int(x) for x in (self._settings.get('favorite_server_ids', []) or [])]
+        except Exception:
+            fav_ids = []
+        seen = set()
+        picked: list[int] = []
+        for sid in fav_ids:
+            if sid and sid not in seen:
+                picked.append(sid)
+                seen.add(sid)
+                if len(picked) >= 3:
+                    return picked[:3]
+
+        # 2) если не хватило — добираем из общего списка
+        try:
+            client = SpeedtestClient()
+            servers = client.list_servers(limit=300)
+            for sv in servers:
+                sid = sv.get('id')
+                if not sid:
+                    continue
+                sid = int(sid)
+                if sid in seen:
+                    continue
+                picked.append(sid)
+                seen.add(sid)
+                if len(picked) >= 3:
+                    break
+        except Exception:
+            # если совсем не удалось получить список — вернём то, что есть
+            pass
+        return picked[:3]
+
+    @pyqtSlot()
+    def run(self):
+        try:
+            self.stageChanged.emit('init')
+            logger.info('Запуск точного теста (3 прогона на разных серверах)...')
+            if self._check_cancel():
+                return
+
+            # Выбираем 3 сервера
+            server_ids = self._pick_three_server_ids()
+            if len(server_ids) < 3:
+                logger.warning('Недостаточно доступных серверов для точного теста, будет использовано меньше 3.')
+
+            results: list[dict] = []
+            client = SpeedtestClient()
+
+            for idx, sid in enumerate(server_ids):
+                if self._check_cancel():
+                    return
+                self.stageChanged.emit('servers')
+                logger.info(f'[{idx+1}/3] Тест на сервере ID={sid}...')
+                self.stageChanged.emit('download')
+                res = client.perform_test(cancel_event=self._cancel_event, server_id_override=sid)
+                results.append(res)
+
+            if self._check_cancel():
+                return
+
+            # Если серверов было меньше 3 (редкий случай), дотестируем оставшиеся автоматическим выбором
+            while len(results) < 3 and not self._cancel_event.is_set():
+                self.stageChanged.emit('servers')
+                logger.info(f'[{len(results)+1}/3] Тест с автоматическим выбором сервера...')
+                self.stageChanged.emit('download')
+                res = client.perform_test(cancel_event=self._cancel_event, server_id_override=None)
+                results.append(res)
+
+            if self._check_cancel():
+                return
+
+            self.stageChanged.emit('saving')
+            # Подсчёт среднего
+            try:
+                ping_avg = sum(float(r.get('ping_ms', 0.0)) for r in results) / max(1, len(results))
+                d_avg = sum(float(r.get('download_bps', 0.0)) for r in results) / max(1, len(results))
+                u_avg = sum(float(r.get('upload_bps', 0.0)) for r in results) / max(1, len(results))
+            except Exception:
+                ping_avg, d_avg, u_avg = 0.0, 0.0, 0.0
+
+            avg_result = {
+                'timestamp': 'avg',
+                'ping_ms': ping_avg,
+                'download_bps': d_avg,
+                'upload_bps': u_avg,
+                'aggregate': True,
+                'samples': len(results),
+            }
+
+            self.resultReady.emit(avg_result)
+            self.stageChanged.emit('done')
+            self.finished.emit()
+        except Exception as e:
+            if self._cancel_event.is_set():
+                logger.info('Точный тест отменён пользователем')
+                self.stageChanged.emit('canceled')
+                self.finished.emit()
+            else:
+                logger.exception('Ошибка при выполнении точного теста')
+                self.stageChanged.emit('error')
+                self.error.emit(str(e))
+                self.finished.emit()
