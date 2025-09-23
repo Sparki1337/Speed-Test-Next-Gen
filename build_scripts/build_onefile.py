@@ -22,14 +22,18 @@ def build(version: str) -> int:
         print(f"[Ошибка] Не найден файл иконки: {icon_ico}")
         return 1
 
-    # Строгое выполнение через 'python -m nuitka' как вы просили
+    # Выбор компилятора для Nuitka: Python 3.13+ требует MSVC
+    use_msvc = sys.version_info >= (3, 13)
+    compiler_flag = "--msvc=latest" if use_msvc else "--mingw64"
+
+    # Строгое выполнение через текущий интерпретатор: 'sys.executable -m nuitka'
     cmd = [
-        "python",
+        sys.executable,
         "-m",
         "nuitka",
         "--onefile",
         "--standalone",
-        "--mingw64",
+        compiler_flag,
         "--enable-plugin=pyqt5",
         "--include-qt-plugins=platforms,styles,iconengines,imageformats,platformthemes,printsupport",
         "--include-package=qfluentwidgets",
@@ -47,6 +51,7 @@ def build(version: str) -> int:
         str(main_py),
     ]
 
+    print(f"[Info] Компилятор: {'MSVC (latest)' if use_msvc else 'MinGW-w64'} (Python {sys.version_info.major}.{sys.version_info.minor})")
     print("[Info] Запускаю Nuitka со следующей командой:\n" + " ".join(map(str, cmd)))
     try:
         result = subprocess.run(cmd, check=True, cwd=project_root)
