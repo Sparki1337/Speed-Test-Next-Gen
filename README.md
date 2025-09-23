@@ -36,7 +36,6 @@
 - Зависимости из `requirements.txt`:
   - PyQt5
   - PyQt-Fluent-Widgets
-  - PyQt5-Frameless-Window
   - speedtest-cli
 
 ## Скриншоты
@@ -182,10 +181,22 @@ fluent_speedtest/
 
 ## Сборка (Nuitka)
 
-Тестировалась сборка под Windows (MinGW) в режиме standalone. Пример однострочной команды:
+Рекомендуется использовать готовые скрипты из папки `build_scripts/`:
 
 ```powershell
-python -m nuitka --standalone --mingw64 --enable-plugin=pyqt5 --include-qt-plugins=platforms,styles,iconengines,imageformats,platformthemes,printsupport --include-package=qfluentwidgets --include-package-data=qfluentwidgets --include-package=qframelesswindow --windows-icon-from-ico=assets/app.ico --windows-company-name="By Sparki" --windows-product-name="SpeedTest Nextgen" --windows-file-description="SpeedTest" --windows-file-version=1.1.0 --windows-product-version=1.1.0 --windows-console-mode=disable --output-dir=build --output-filename=SpeedTestNextgen main.py
+# Сборка в папку (standalone)
+python build_scripts\build_folder.py -v 1.1.0
+
+# Сборка в один файл (onefile)
+python build_scripts\build_onefile.py -v 1.1.0
+```
+
+Скрипты автоматически подберут компилятор: для Python 3.13+ будет использован MSVC, для более ранних — MinGW-w64.
+
+Альтернативно можно собрать однострочной командой Nuitka (пример для standalone):
+
+```powershell
+python -m nuitka --standalone --enable-plugin=pyqt5 --include-qt-plugins=platforms,styles,iconengines,imageformats,platformthemes,printsupport --include-package=qfluentwidgets --include-package-data=qfluentwidgets --include-package=qframelesswindow --windows-icon-from-ico=assets/app.ico --windows-company-name="By Sparki" --windows-product-name="SpeedTest Nextgen" --windows-file-description="SpeedTest" --windows-file-version=1.1.0 --windows-product-version=1.1.0 --windows-console-mode=disable --output-dir=build --output-filename=SpeedTestNextgen main.py
 ```
 
 - Результат: `build\main.dist\SpeedTestNextgen.exe`
@@ -196,4 +207,3 @@ python -m nuitka --standalone --mingw64 --enable-plugin=pyqt5 --include-qt-plugi
 
 - [speedtest-cli](https://github.com/sivel/speedtest-cli) — измерение скорости
 - [QFluentWidgets](https://github.com/zhiyiYo/QFluentWidgets) — красивые Fluent-компоненты для PyQt
-
