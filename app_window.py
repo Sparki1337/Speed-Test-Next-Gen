@@ -45,7 +45,7 @@ class AppWindow(FluentWindow):
     def initWindow(self):
         self.resize(980, 700)
         self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
-        self.setWindowTitle('Speedtest NextGen by Sparki | v1.2.0 Beta')
+        self.setWindowTitle('Speedtest NextGen by Sparki | v1.2.0')
 
         desktop = QApplication.desktop().availableGeometry()
         w, h = desktop.width(), desktop.height()
