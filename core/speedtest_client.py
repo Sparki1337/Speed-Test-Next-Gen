@@ -8,11 +8,9 @@ import speedtest
 logger = logging.getLogger(__name__)
 
 try:
-    from fluent_speedtest.utils import import_attrs
-except ImportError:  # запуск из каталога
-    from utils import import_attrs  # type: ignore
-
-get_settings, = import_attrs("core.settings", "get_settings")
+    from .settings import get_settings
+except ImportError:
+    from core.settings import get_settings  # type: ignore
 
 class SpeedtestClient:
     """ Обёртка над speedtest-cli для получения ping/down/up и информации о сервере """

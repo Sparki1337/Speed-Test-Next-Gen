@@ -1,7 +1,6 @@
 # coding: utf-8
 from __future__ import annotations
 import json
-import logging
 from pathlib import Path
 from typing import Any, Dict
 
@@ -19,9 +18,6 @@ def documents_dir() -> Path:
 
 def settings_path() -> Path:
     return documents_dir() / APP_FOLDER_NAME / SETTINGS_FILENAME
-
-
-logger = logging.getLogger(__name__)
 
 
 _DEFAULTS: Dict[str, Any] = {
@@ -42,40 +38,12 @@ class SettingsManager(QObject):
         self._path.parent.mkdir(parents=True, exist_ok=True)
         self._load()
 
-    def _backup_corrupted_file(self) -> Path | None:
-        try:
-            base = self._path.parent / f"{self._path.name}.bak"
-            if not base.exists():
-                self._path.rename(base)
-                return base
-            idx = 1
-            while True:
-                candidate = self._path.parent / f"{self._path.name}.bak{idx}"
-                if not candidate.exists():
-                    self._path.rename(candidate)
-                    return candidate
-                idx += 1
-        except Exception as exc:
-            logger.warning("Не удалось создать резервную копию повреждённого файла настроек: %s", exc)
-        return None
-
     def _load(self) -> None:
         if self._path.exists():
             try:
                 self._data = json.loads(self._path.read_text(encoding="utf-8"))
-            except Exception as exc:
-                backup_path = self._backup_corrupted_file()
+            except Exception:
                 self._data = {}
-                if backup_path is not None:
-                    logger.warning(
-                        "Файл настроек повреждён и был перемещён в '%s'. Будут использованы значения по умолчанию.",
-                        backup_path,
-                    )
-                else:
-                    logger.warning(
-                        "Файл настроек повреждён и будет перезаписан значениями по умолчанию: %s",
-                        exc,
-                    )
         # применяем значения по умолчанию
         for k, v in _DEFAULTS.items():
             self._data.setdefault(k, v)
