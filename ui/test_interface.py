@@ -5,6 +5,7 @@ from datetime import datetime
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel
 from PyQt5.QtGui import QColor
+from qfluentwidgets import icon
 
 try:
     from qfluentwidgets import (
@@ -74,7 +75,7 @@ class TestInterface(QWidget):
         self.vBox.setContentsMargins(24, 24, 24, 24)
         self.vBox.setSpacing(16)
 
-        self.title = SubtitleLabel('Тест скорости', self)
+        self.title = SubtitleLabel('', self)
         self.title.setAlignment(Qt.AlignHCenter)
         self.ring = IndeterminateProgressRing(self)
         self.ring.setFixedSize(90, 90)
@@ -94,8 +95,8 @@ class TestInterface(QWidget):
             self.cardContainerLayout.addWidget(card, 1)
 
         self.buttonsRow = QHBoxLayout()
-        self.startBtn = PrimaryPushButton('Старт', self, icon=FIF.PLAY)
-        self.preciseBtn = PrimaryPushButton('Точный тест', self)
+        self.startBtn = PrimaryPushButton('Тест', self, icon=FIF.PLAY)
+        self.preciseBtn = PrimaryPushButton('Точный тест', self, icon=FIF.PLAY)
         self.stopBtn = PushButton('Стоп', self, icon=FIF.STOP_WATCH)
         self.stopBtn.setDisabled(True)
         self.buttonsRow.addStretch(1)
