@@ -2,11 +2,13 @@
 import json
 from typing import List, Dict, Optional
 
-# Данные должны храниться там же, где и настройки: Documents/SpeedtestNextGen/
 try:
-    from .settings import documents_dir, APP_FOLDER_NAME
-except ImportError:
-    from core.settings import documents_dir, APP_FOLDER_NAME  # type: ignore
+    from fluent_speedtest.utils import import_attrs
+except ImportError:  # запуск из каталога
+    from utils import import_attrs  # type: ignore
+
+# Данные должны храниться там же, где и настройки: Documents/SpeedtestNextGen/
+documents_dir, APP_FOLDER_NAME = import_attrs("core.settings", "documents_dir", "APP_FOLDER_NAME")
 
 # Папка данных внутри каталога приложения в Документах
 APP_DATA_DIR = documents_dir() / APP_FOLDER_NAME

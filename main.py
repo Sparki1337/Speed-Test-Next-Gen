@@ -1,17 +1,24 @@
 # coding: utf-8
-import os
 import sys
 import platform
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
-# Импорты пакета (основной путь)
 try:
-    from .logging_utils import LogEmitter, setup_logging, apply_logging_enabled
-except ImportError:
-    # Запасной путь: запуск из папки как скрипта
-    from logging_utils import LogEmitter, setup_logging, apply_logging_enabled  # type: ignore
+    from fluent_speedtest.utils import import_attrs
+except ImportError:  # запуск из каталога
+    from utils import import_attrs  # type: ignore
+
+
+LogEmitter, setup_logging, apply_logging_enabled = import_attrs(
+    "logging_utils",
+    "LogEmitter",
+    "setup_logging",
+    "apply_logging_enabled",
+)
+get_settings, = import_attrs("core.settings", "get_settings")
+AppWindow, = import_attrs("app_window", "AppWindow")
 
 
 def main():
@@ -38,12 +45,6 @@ def main():
 
     # Логирование с выводом в UI и настройки (хранятся в C:/Users/<User>/Documents/SpeedtestNextGen/settings.json)
     emitter = LogEmitter()
-    # Настройки (хранятся в C:/Users/<User>/Documents/SpeedtestNextGen/settings.json)
-    try:
-        from .core.settings import get_settings
-    except ImportError:
-        from core.settings import get_settings  # type: ignore
-
     settings = get_settings()
     # Применить тему из настроек
     theme_name = str(settings.get('theme', 'Dark'))
@@ -61,12 +62,6 @@ def main():
             apply_logging_enabled(bool(value), ui_emitter=emitter)
 
     settings.changed.connect(_on_setting_changed)
-
-    # Импорт окна после создания QApplication
-    try:
-        from .app_window import AppWindow
-    except ImportError:
-        from app_window import AppWindow  # type: ignore
 
     w = AppWindow(emitter=emitter)
     w.show()

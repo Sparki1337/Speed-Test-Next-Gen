@@ -19,11 +19,12 @@ from qfluentwidgets import (
 logger = logging.getLogger(__name__)
 
 try:
-    from ..core.speedtest_client import SpeedtestClient
-    from ..core.settings import get_settings
+    from fluent_speedtest.utils import import_attrs
 except ImportError:  # запуск как скрипт в папке
-    from core.speedtest_client import SpeedtestClient  # type: ignore
-    from core.settings import get_settings  # type: ignore
+    from utils import import_attrs  # type: ignore
+
+SpeedtestClient, = import_attrs("core.speedtest_client", "SpeedtestClient")
+get_settings, = import_attrs("core.settings", "get_settings")
 
 
 class _ServersLoader(QObject):

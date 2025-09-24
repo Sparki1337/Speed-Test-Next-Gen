@@ -14,9 +14,11 @@ from qfluentwidgets import (
 )
 
 try:
-    from ..core.settings import get_settings
+    from fluent_speedtest.utils import import_attrs
 except ImportError:
-    from core.settings import get_settings  # type: ignore
+    from utils import import_attrs  # type: ignore
+
+get_settings, = import_attrs("core.settings", "get_settings")
 
 
 class SettingsInterface(QWidget):

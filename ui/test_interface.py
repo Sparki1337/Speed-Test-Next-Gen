@@ -48,14 +48,13 @@ except ImportError:
         from PyQt5.QtWidgets import QTextBrowser as LogViewClass
 
 try:
-    from ..core.worker import SpeedtestWorker, PreciseSpeedtestWorker
-    from ..core.storage import append_result
-    from ..core.settings import get_settings
-except ImportError:
-    # Запуск без пакета: импорт из локальной папки
-    from core.worker import SpeedtestWorker, PreciseSpeedtestWorker  # type: ignore
-    from core.storage import append_result  # type: ignore
-    from core.settings import get_settings  # type: ignore
+    from fluent_speedtest.utils import import_attrs
+except ImportError:  # запуск из каталога
+    from utils import import_attrs  # type: ignore
+
+SpeedtestWorker, PreciseSpeedtestWorker = import_attrs("core.worker", "SpeedtestWorker", "PreciseSpeedtestWorker")
+append_result, = import_attrs("core.storage", "append_result")
+get_settings, = import_attrs("core.settings", "get_settings")
 
 logger = logging.getLogger(__name__)
 
@@ -65,6 +64,9 @@ class TestInterface(QWidget):
         super().__init__(parent=parent)
         self.setObjectName('test-interface')
         self.settings = get_settings()
+        self._logs_enabled = bool(self.settings.get('logs_enabled', True))
+        self._emitter = emitter
+        self._emitter_connected = False
 
         # UI
         self.vBox = QVBoxLayout(self)
@@ -103,7 +105,7 @@ class TestInterface(QWidget):
         self.logView.setPlaceholderText('Логи выполнения будут отображаться здесь...')
         self.logView.setMinimumHeight(180)
         # применить из настроек видимость панели логов
-        self._apply_logs_enabled(bool(self.settings.get('logs_enabled', True)))
+        self._apply_logs_enabled(self._logs_enabled)
 
         self.vBox.addWidget(self.title)
         self.vBox.addWidget(self.ring, 0, Qt.AlignHCenter)
@@ -115,16 +117,15 @@ class TestInterface(QWidget):
         self.thread: QThread = None
         self.worker = None  # SpeedtestWorker | PreciseSpeedtestWorker
 
-        # events
+        # события
         self.startBtn.clicked.connect(self.start_test)
         self.preciseBtn.clicked.connect(self.start_precise_test)
         self.stopBtn.clicked.connect(self.stop_test)
 
-        # connect UI logger emitter
-        if emitter is not None:
-            emitter.message.connect(self._append_log)
+        # Подключение UI logger emitter (если разрешено)
+        self._connect_emitter()
 
-        # подписаться на изменения настроек (переключатель логов)
+        # Подписка на изменения настроек (переключатель логов)
         self.settings.changed.connect(self._on_setting_changed)
 
     # ============== logic ==============
@@ -139,7 +140,7 @@ class TestInterface(QWidget):
 
     def _append_log(self, line: str):
         # если логи выключены — игнорируем
-        if not bool(self.settings.get('logs_enabled', True)):
+        if not self._logs_enabled:
             return
         self.logView.append(line)
 
@@ -149,12 +150,35 @@ class TestInterface(QWidget):
             return f"{bps / 8e6:.2f} MB/s"
         return f"{bps / 1e6:.2f} Mbps"
 
+    def _connect_emitter(self):
+        if not self._logs_enabled or self._emitter is None or self._emitter_connected:
+            return
+        try:
+            self._emitter.message.connect(self._append_log)
+        except Exception:
+            return
+        self._emitter_connected = True
+
+    def _disconnect_emitter(self):
+        if not self._emitter_connected or self._emitter is None:
+            return
+        try:
+            self._emitter.message.disconnect(self._append_log)
+        except TypeError:
+            pass
+        self._emitter_connected = False
+
     def _apply_logs_enabled(self, enabled: bool):
-        self.logView.setVisible(bool(enabled))
+        enabled = bool(enabled)
+        self._logs_enabled = enabled
+        self.logView.setVisible(enabled)
         if enabled:
             self.logView.setMinimumHeight(180)
+            self._connect_emitter()
         else:
             self.logView.setMinimumHeight(0)
+            self.logView.clear()
+            self._disconnect_emitter()
 
     def _on_setting_changed(self, key: str, value):
         if key == 'logs_enabled':
@@ -223,10 +247,10 @@ class TestInterface(QWidget):
             self.worker.cancel()
 
     def _on_result(self, result: dict):
-        # persist
+        # Сохранение результата
         append_result(result)
 
-        # update UI values
+        # Обновление UI значений
         ping = result.get('ping_ms', 0)
         d_bps = result.get('download_bps', 0.0)
         u_bps = result.get('upload_bps', 0.0)
