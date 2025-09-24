@@ -1,24 +1,17 @@
 # coding: utf-8
+import os
 import sys
 import platform
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QApplication
 
+# Импорты пакета (основной путь)
 try:
-    from fluent_speedtest.utils import import_attrs
-except ImportError:  # запуск из каталога
-    from utils import import_attrs  # type: ignore
-
-
-LogEmitter, setup_logging, apply_logging_enabled = import_attrs(
-    "logging_utils",
-    "LogEmitter",
-    "setup_logging",
-    "apply_logging_enabled",
-)
-get_settings, = import_attrs("core.settings", "get_settings")
-AppWindow, = import_attrs("app_window", "AppWindow")
+    from .logging_utils import LogEmitter, setup_logging
+except ImportError:
+    # Запасной путь: запуск из папки как скрипта
+    from logging_utils import LogEmitter, setup_logging  # type: ignore
 
 
 def main():
@@ -45,6 +38,12 @@ def main():
 
     # Логирование с выводом в UI и настройки (хранятся в C:/Users/<User>/Documents/SpeedtestNextGen/settings.json)
     emitter = LogEmitter()
+    # Настройки (хранятся в C:/Users/<User>/Documents/SpeedtestNextGen/settings.json)
+    try:
+        from .core.settings import get_settings
+    except ImportError:
+        from core.settings import get_settings  # type: ignore
+
     settings = get_settings()
     # Применить тему из настроек
     theme_name = str(settings.get('theme', 'Dark'))
@@ -53,15 +52,13 @@ def main():
     else:
         setTheme(Theme.LIGHT)
 
-    logs_enabled = bool(settings.get('logs_enabled', True))
-    setup_logging(ui_emitter=emitter, enabled=logs_enabled)
+    setup_logging(ui_emitter=emitter, enabled=True)
 
-    # Реакция на динамическое изменение флага логов из настроек
-    def _on_setting_changed(key: str, value):
-        if key == 'logs_enabled':
-            apply_logging_enabled(bool(value), ui_emitter=emitter)
-
-    settings.changed.connect(_on_setting_changed)
+    # Импорт окна после создания QApplication
+    try:
+        from .app_window import AppWindow
+    except ImportError:
+        from app_window import AppWindow  # type: ignore
 
     w = AppWindow(emitter=emitter)
     w.show()

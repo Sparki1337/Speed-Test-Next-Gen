@@ -4,13 +4,8 @@ from threading import Event
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
-try:
-    from fluent_speedtest.utils import import_attrs
-except ImportError:  # запуск из каталога
-    from utils import import_attrs  # type: ignore
-
-SpeedtestClient, = import_attrs("core.speedtest_client", "SpeedtestClient")
-get_settings, = import_attrs("core.settings", "get_settings")
+from .speedtest_client import SpeedtestClient
+from .settings import get_settings
 
 logger = logging.getLogger(__name__)
 
