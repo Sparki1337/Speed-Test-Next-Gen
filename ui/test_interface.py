@@ -215,10 +215,10 @@ class TestInterface(QWidget):
             self.worker.cancel()
 
     def _on_result(self, result: dict):
-        # persist
+        # сохранение результата
         append_result(result)
 
-        # update UI values
+        # обновление UI значений
         ping = result.get('ping_ms', 0)
         d_bps = result.get('download_bps', 0.0)
         u_bps = result.get('upload_bps', 0.0)

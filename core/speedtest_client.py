@@ -13,18 +13,16 @@ except ImportError:
     from core.settings import get_settings  # type: ignore
 
 class SpeedtestClient:
-    """ Обёртка над speedtest-cli для получения ping/down/up и информации о сервере """
+    # Обёртка над speedtest-cli для получения ping/down/up и информации о сервере
 
     def __init__(self):
         self.settings = get_settings()
         self._ua_patched = False
 
     def _monkeypatch_user_agent(self):
-        """Пробуем подменить User-Agent на браузерный для обхода возможного 403 от Cloudflare.
-
-        Библиотека speedtest-cli использует функцию build_user_agent() для установки заголовка.
-        Мы мягко меняем её, если доступна.
-        """
+        # Пробуем подменить User-Agent на браузерный для обхода возможного 403 от Cloudflare.
+        # Библиотека speedtest-cli использует функцию build_user_agent() для установки заголовка.
+        # Мы мягко меняем её, если доступна.
         if self._ua_patched:
             return
         try:
@@ -43,13 +41,12 @@ class SpeedtestClient:
             pass
 
     def _create_speedtest(self) -> "speedtest.Speedtest":
-        """Создать экземпляр Speedtest с повторными попытками и обходом 403.
-
-        Последовательность попыток:
-        1) Обычная инициализация
-        2) Повтор с переключением secure=True/False
-        3) Патч User-Agent и снова попытки
-        """
+        # Создать экземпляр Speedtest с повторными попытками и обходом 403.
+        # Последовательность попыток:
+        # 1) Обычная инициализация
+        # 2) Повтор с переключением secure=True/False
+        # 3) Патч User-Agent и снова попытки
+        
         last_err: Exception | None = None
 
         def _try_variants():
@@ -178,10 +175,8 @@ class SpeedtestClient:
         return result
 
     def list_servers(self, limit: int = 200):
-        """Получить список доступных серверов (упрощённый вид для UI).
-
-        Возвращает список словарей: id, sponsor, name (city), country, host
-        """
+        # Получить список доступных серверов (упрощённый вид для UI).
+        # Возвращает список словарей: id, sponsor, name (city), country, host
         s = self._create_speedtest()
         s.get_servers([])
         servers = []
