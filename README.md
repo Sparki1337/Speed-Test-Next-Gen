@@ -193,13 +193,6 @@ python build_scripts\build_onefile.py -v 1.1.0
 
 Скрипты автоматически подберут компилятор: для Python 3.13+ будет использован MSVC, для более ранних — MinGW-w64.
 
-Альтернативно можно собрать однострочной командой Nuitka (пример для standalone):
-
-```powershell
-python -m nuitka --standalone --enable-plugin=pyqt5 --include-qt-plugins=platforms,styles,iconengines,imageformats,platformthemes,printsupport --include-package=qfluentwidgets --include-package-data=qfluentwidgets --include-package=qframelesswindow --windows-icon-from-ico=assets/app.ico --windows-company-name="By Sparki" --windows-product-name="SpeedTest Nextgen" --windows-file-description="SpeedTest" --windows-file-version=1.1.0 --windows-product-version=1.1.0 --windows-console-mode=disable --output-dir=build --output-filename=SpeedTestNextgen main.py
-```
-
-- Результат: `build\main.dist\SpeedTestNextgen.exe`
 - Иконка exe берётся из `assets/app.ico`
 - Данные сохраняются в: `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`
 
