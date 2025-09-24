@@ -74,7 +74,7 @@ class TestInterface(QWidget):
         self.vBox.setContentsMargins(24, 24, 24, 24)
         self.vBox.setSpacing(16)
 
-        self.title = SubtitleLabel('Тест скорости', self)
+        self.title = SubtitleLabel('', self)
         self.title.setAlignment(Qt.AlignHCenter)
         self.ring = IndeterminateProgressRing(self)
         self.ring.setFixedSize(90, 90)
