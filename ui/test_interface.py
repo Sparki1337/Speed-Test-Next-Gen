@@ -101,8 +101,7 @@ class TestInterface(QWidget):
         self.logView = LogViewClass(self)
         self.logView.setPlaceholderText('Логи выполнения будут отображаться здесь...')
         self.logView.setMinimumHeight(180)
-        # применить из настроек видимость панели логов
-        self._apply_logs_enabled(bool(self.settings.get('logs_enabled', True)))
+        self.logView.setVisible(True)
 
         self.vBox.addWidget(self.ring, 0, Qt.AlignHCenter)
         self.vBox.addLayout(self.buttonsRow)
@@ -138,9 +137,6 @@ class TestInterface(QWidget):
         InfoBar.error(title='Ошибка', content=text, orient=Qt.Horizontal, position=InfoBarPosition.TOP, parent=self)
 
     def _append_log(self, line: str):
-        # если логи выключены — игнорируем
-        if not bool(self.settings.get('logs_enabled', True)):
-            return
         self.logView.append(line)
 
     def _format_speed(self, bps: float) -> str:
@@ -149,17 +145,8 @@ class TestInterface(QWidget):
             return f"{bps / 8e6:.2f} MB/s"
         return f"{bps / 1e6:.2f} Mbps"
 
-    def _apply_logs_enabled(self, enabled: bool):
-        self.logView.setVisible(bool(enabled))
-        if enabled:
-            self.logView.setMinimumHeight(180)
-        else:
-            self.logView.setMinimumHeight(0)
-
     def _on_setting_changed(self, key: str, value):
-        if key == 'logs_enabled':
-            self._apply_logs_enabled(bool(value))
-        elif key == 'theme':
+        if key == 'theme':
             self._apply_theme_to_cards(str(value))
 
     def _on_stage_changed(self, stage: str):

@@ -23,7 +23,6 @@ def settings_path() -> Path:
 _DEFAULTS: Dict[str, Any] = {
     "units": "Mbps",         # Mbps | MB/s
     "theme": "Dark",         # Dark | Light
-    "logs_enabled": True,     # Включены ли логи (UI + консоль)
     "favorite_server_ids": [],  # список избранных серверов (IDs)
 }
 
@@ -47,6 +46,8 @@ class SettingsManager(QObject):
         # применяем значения по умолчанию
         for k, v in _DEFAULTS.items():
             self._data.setdefault(k, v)
+        # флаг логов всегда принудительно включён
+        self._data['logs_enabled'] = True
 
     def save(self) -> None:
         self._path.write_text(json.dumps(self._data, ensure_ascii=False, indent=2), encoding="utf-8")

@@ -8,10 +8,10 @@ from PyQt5.QtWidgets import QApplication
 
 # Импорты пакета (основной путь)
 try:
-    from .logging_utils import LogEmitter, setup_logging, apply_logging_enabled
+    from .logging_utils import LogEmitter, setup_logging
 except ImportError:
     # Запасной путь: запуск из папки как скрипта
-    from logging_utils import LogEmitter, setup_logging, apply_logging_enabled  # type: ignore
+    from logging_utils import LogEmitter, setup_logging  # type: ignore
 
 
 def main():
@@ -52,15 +52,7 @@ def main():
     else:
         setTheme(Theme.LIGHT)
 
-    logs_enabled = bool(settings.get('logs_enabled', True))
-    setup_logging(ui_emitter=emitter, enabled=logs_enabled)
-
-    # Реакция на динамическое изменение флага логов из настроек
-    def _on_setting_changed(key: str, value):
-        if key == 'logs_enabled':
-            apply_logging_enabled(bool(value), ui_emitter=emitter)
-
-    settings.changed.connect(_on_setting_changed)
+    setup_logging(ui_emitter=emitter, enabled=True)
 
     # Импорт окна после создания QApplication
     try:
