@@ -11,10 +11,9 @@ logger = logging.getLogger(__name__)
 
 
 class SpeedtestWorker(QObject):
-    """
-    Фоновый исполнитель для запуска speedtest без блокировки GUI.
-    Прерывание происходит мягко (отмена применяется между этапами).
-    """
+    
+    # Фоновый исполнитель для запуска speedtest без блокировки GUI.
+    # Прерывание происходит мягко (отмена применяется между этапами).
 
     stageChanged = pyqtSignal(str)       # init | servers | best | download | upload | saving | done | canceled | error
     log = pyqtSignal(str)
@@ -112,10 +111,9 @@ class SpeedtestWorker(QObject):
 
 
 class PreciseSpeedtestWorker(QObject):
-    """
-    Последовательно выполняет 3 теста на разных серверах и отдаёт среднее значение.
-    При наличии избранных серверов использует их с приоритетом.
-    """
+    
+    # Последовательно выполняет 3 теста на разных серверах и отдаёт среднее значение.
+    # При наличии избранных серверов использует их с приоритетом.
 
     stageChanged = pyqtSignal(str)       # init | servers | best | download | upload | saving | done | canceled | error
     log = pyqtSignal(str)
