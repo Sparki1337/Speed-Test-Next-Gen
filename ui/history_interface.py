@@ -5,12 +5,12 @@ from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QTableWidgetItem
 from qfluentwidgets import PushButton, SubtitleLabel, InfoBar, InfoBarPosition, TableWidget
 
 try:
-    from ..core.storage import load_results, clear_results
-    from ..core.settings import get_settings
-except ImportError:
-    # Запасной импорт при запуске из каталога
-    from core.storage import load_results, clear_results  # type: ignore
-    from core.settings import get_settings  # type: ignore
+    from fluent_speedtest.utils import import_attrs
+except ImportError:  # запуск из каталога
+    from utils import import_attrs  # type: ignore
+
+load_results, clear_results = import_attrs("core.storage", "load_results", "clear_results")
+get_settings, = import_attrs("core.settings", "get_settings")
 
 
 class HistoryInterface(QWidget):

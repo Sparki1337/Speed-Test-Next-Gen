@@ -10,16 +10,14 @@ from qfluentwidgets import (
 )
 
 try:
-    from .ui.test_interface import TestInterface
-    from .ui.history_interface import HistoryInterface
-    from .ui.settings_interface import SettingsInterface
-    from .ui.servers_interface import ServersInterface
-except ImportError:
-    # Запуск без пакета (python app_window.py / python main.py в каталоге)
-    from ui.test_interface import TestInterface  # type: ignore
-    from ui.history_interface import HistoryInterface  # type: ignore
-    from ui.settings_interface import SettingsInterface  # type: ignore
-    from ui.servers_interface import ServersInterface  # type: ignore
+    from fluent_speedtest.utils import import_attrs
+except ImportError:  # запуск из каталога
+    from utils import import_attrs  # type: ignore
+
+TestInterface, = import_attrs("ui.test_interface", "TestInterface")
+HistoryInterface, = import_attrs("ui.history_interface", "HistoryInterface")
+SettingsInterface, = import_attrs("ui.settings_interface", "SettingsInterface")
+ServersInterface, = import_attrs("ui.servers_interface", "ServersInterface")
 
 
 class AppWindow(FluentWindow):
@@ -47,7 +45,7 @@ class AppWindow(FluentWindow):
     def initWindow(self):
         self.resize(980, 700)
         self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
-        self.setWindowTitle('Speedtest NextGen by Sparki | v1.1.1')
+        self.setWindowTitle('Speedtest NextGen by Sparki | v1.2.0')
 
         desktop = QApplication.desktop().availableGeometry()
         w, h = desktop.width(), desktop.height()
