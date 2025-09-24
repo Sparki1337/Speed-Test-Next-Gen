@@ -1,4 +1,4 @@
-# Fluent Speedtest (Windows 10/11)
+# SpeedtestNextGen (Windows 10/11)
 
 Красивый тестер скорости на PyQt5 + PyQt-Fluent-Widgets с тёмной темой, анимациями и сохранением результатов.
 
