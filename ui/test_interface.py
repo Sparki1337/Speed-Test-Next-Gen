@@ -5,7 +5,6 @@ from datetime import datetime
 from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QFrame, QLabel
 from PyQt5.QtGui import QColor
-from qfluentwidgets import icon
 
 try:
     from qfluentwidgets import (
