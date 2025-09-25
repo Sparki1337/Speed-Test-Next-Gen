@@ -198,5 +198,6 @@ python build_scripts\build_onefile.py -v 1.1.0
 
 ## Благодарности
 
-- [speedtest-cli](https://github.com/sivel/speedtest-cli) — измерение скорости
-- [QFluentWidgets](https://github.com/zhiyiYo/QFluentWidgets) — красивые Fluent-компоненты для PyQt
+- **speedtest-cli** — измерение скорости
+- **Ookla Speedtest CLI** — официальный CLI-клиент
+- **QFluentWidgets** — красивые Fluent-компоненты для PyQt
