@@ -125,6 +125,8 @@ class TestInterface(QWidget):
         self.settings.changed.connect(self._on_setting_changed)
 
         self._apply_theme_to_cards()
+        # применить режим движка к элементам управления
+        self._apply_engine_mode()
 
     # Логика
     def _info(self, text: str):
@@ -148,6 +150,8 @@ class TestInterface(QWidget):
     def _on_setting_changed(self, key: str, value):
         if key == 'theme':
             self._apply_theme_to_cards(str(value))
+        elif key == 'engine':
+            self._apply_engine_mode(str(value))
 
     def _on_stage_changed(self, stage: str):
         if stage in {'init', 'servers', 'best', 'download', 'upload', 'saving'}:
@@ -234,6 +238,11 @@ class TestInterface(QWidget):
         theme = theme_name or str(self.settings.get('theme', 'Dark'))
         for card in (self.cardPing, self.cardDownload, self.cardUpload):
             card.set_theme(theme)
+
+    def _apply_engine_mode(self, engine_name: str | None = None):
+        # Если выбран движок Ookla, скрываем кнопку «Точный тест» (не поддерживается в этом режиме)
+        engine = (engine_name or str(self.settings.get('engine', 'python'))).lower()
+        self.preciseBtn.setVisible(engine != 'ookla')
 
     def _on_error(self, msg: str):
         self._error(msg)
