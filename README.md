@@ -9,6 +9,7 @@
 - **Управление серверами**: выбор приоритетного сервера, избранные и фильтрация в `ui/servers_interface.py`.
 - **Журнал событий**: логи в UI и (при наличии консоли) в stdout всегда активны.
 - **История измерений**: автоматическое сохранение в `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl` и просмотр через `ui/history_interface.py`.
+- **Альтернативный движок**: поддержка официального Ookla Speedtest CLI (`speedtest.exe`) как альтернативы встроенной библиотеке `speedtest-cli`.
 
 ## Запуск
 
@@ -38,6 +39,7 @@
   - PyQt5
   - PyQt-Fluent-Widgets
   - speedtest-cli
+  - (опционально) Внешний бинарник [Ookla Speedtest CLI](https://www.speedtest.net/apps/cli) — если используете режим "Ookla CLI".
 
 ## Скриншоты
 
@@ -98,7 +100,31 @@ fluent_speedtest/
   - `units`: `Mbps` или `MB/s`.
   - `server_id`: числовой ID выбранного сервера (опционально).
   - `favorite_server_ids`: список ID избранных серверов (опционально).
+  - `engine`: `python` (по умолчанию) или `ookla` — выбор движка измерений.
+  - `ookla_path`: путь к `speedtest.exe` (если пусто — будет взят из `PATH`).
+  - `ookla_timeout`: таймаут выполнения `speedtest.exe` в секундах (по умолчанию `90`).
 - **Хранение данных**: результаты тестов лежат в `C:/Users/<Пользователь>/Documents/SpeedtestNextGen/data/results.jsonl`.
+
+## Альтернативный движок: Ookla Speedtest CLI
+
+Для более близких к официальному speedtest.net результатов вы можете использовать официальный CLI от Ookla.
+
+### Установка
+
+- Скачайте `speedtest` с сайта: https://www.speedtest.net/apps/cli
+- Либо через пакетный менеджер:
+  - Windows: `winget install -e --id Ookla.Speedtest.CLI`
+
+### Настройка в приложении
+
+- Откройте раздел `Настройки`.
+- В поле "Движок теста" выберите `Ookla CLI (speedtest.exe)`.
+- Укажите путь к `speedtest.exe` (если он не в `PATH`).
+- При необходимости задайте таймаут (30/60/90/120 сек).
+
+Во время запуска теста приложение автоматически добавляет флаги `--accept-license` и `--accept-gdpr`, формирует JSON-вывод (`--format=json`) и парсит результат. Отмена теста завершает процесс `speedtest.exe` корректно.
+
+Формат сохраняемых результатов не меняется — поля `ping_ms`, `download_bps`, `upload_bps` и `server.*` совместимы с UI. Дополнительно в результат добавляется поле `engine: "ookla"` для справки.
 
 ## Использование
 

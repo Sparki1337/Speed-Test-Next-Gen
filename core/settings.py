@@ -24,6 +24,9 @@ _DEFAULTS: Dict[str, Any] = {
     "units": "Mbps",         # Mbps | MB/s
     "theme": "Dark",         # Dark | Light
     "favorite_server_ids": [],  # список избранных серверов (IDs)
+    "engine": "python",      # Движок измерения: 'python' (встроенная библиотека speedtest-cli) | 'ookla' (официальный speedtest.exe)
+    "ookla_path": "",        # Путь к speedtest.exe (если пусто — ищется в PATH)
+    "ookla_timeout": 90,     # Таймаут выполнения speedtest.exe (секунды)
 }
 
 

@@ -6,6 +6,10 @@ from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
 from .speedtest_client import SpeedtestClient
 from .settings import get_settings
+try:
+    from .ookla_client import OoklaCliClient
+except ImportError:  # fallback при локальном запуске
+    from core.ookla_client import OoklaCliClient  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +52,14 @@ class SpeedtestWorker(QObject):
     @pyqtSlot()
     def run(self):
         try:
-            client = SpeedtestClient()
+            # Выбор движка: 'python' | 'ookla'
+            engine = str(self._settings.get('engine', 'python')).lower()
+            if engine == 'ookla':
+                client = OoklaCliClient()
+                logger.info('Движок: Ookla CLI')
+            else:
+                client = SpeedtestClient()
+                logger.info('Движок: Python speedtest-cli')
 
             self.stageChanged.emit('init')
             logger.info('Запуск теста скорости...')
@@ -195,8 +206,14 @@ class PreciseSpeedtestWorker(QObject):
                     return
                 self.stageChanged.emit('servers')
                 logger.info(f'[{idx+1}/3] Тест на сервере ID={sid}...')
+                # Измеряем выбранным движком
+                engine = str(self._settings.get('engine', 'python')).lower()
+                if engine == 'ookla':
+                    runner = OoklaCliClient()
+                else:
+                    runner = SpeedtestClient()
                 self.stageChanged.emit('download')
-                res = client.perform_test(cancel_event=self._cancel_event, server_id_override=sid)
+                res = runner.perform_test(cancel_event=self._cancel_event, server_id_override=sid)
                 results.append(res)
 
             if self._check_cancel():
@@ -206,8 +223,13 @@ class PreciseSpeedtestWorker(QObject):
             while len(results) < 3 and not self._cancel_event.is_set():
                 self.stageChanged.emit('servers')
                 logger.info(f'[{len(results)+1}/3] Тест с автоматическим выбором сервера...')
+                engine = str(self._settings.get('engine', 'python')).lower()
+                if engine == 'ookla':
+                    runner = OoklaCliClient()
+                else:
+                    runner = SpeedtestClient()
                 self.stageChanged.emit('download')
-                res = client.perform_test(cancel_event=self._cancel_event, server_id_override=None)
+                res = runner.perform_test(cancel_event=self._cancel_event, server_id_override=None)
                 results.append(res)
 
             if self._check_cancel():
