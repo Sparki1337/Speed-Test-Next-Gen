@@ -4,22 +4,16 @@ from threading import Event
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
-try:
-    from fluent_speedtest.utils import import_attrs
-except ImportError:  # запуск из каталога
-    from utils import import_attrs  # type: ignore
-
-SpeedtestClient, = import_attrs("core.speedtest_client", "SpeedtestClient")
-get_settings, = import_attrs("core.settings", "get_settings")
+from .speedtest_client import SpeedtestClient
+from .settings import get_settings
 
 logger = logging.getLogger(__name__)
 
 
 class SpeedtestWorker(QObject):
-    """
-    Фоновый исполнитель для запуска speedtest без блокировки GUI.
-    Прерывание происходит мягко (отмена применяется между этапами).
-    """
+    
+    # Фоновый исполнитель для запуска speedtest без блокировки GUI.
+    # Прерывание происходит мягко (отмена применяется между этапами).
 
     stageChanged = pyqtSignal(str)       # init | servers | best | download | upload | saving | done | canceled | error
     log = pyqtSignal(str)
@@ -117,10 +111,9 @@ class SpeedtestWorker(QObject):
 
 
 class PreciseSpeedtestWorker(QObject):
-    """
-    Последовательно выполняет 3 теста на разных серверах и отдаёт среднее значение.
-    При наличии избранных серверов использует их с приоритетом.
-    """
+    
+    # Последовательно выполняет 3 теста на разных серверах и отдаёт среднее значение.
+    # При наличии избранных серверов использует их с приоритетом.
 
     stageChanged = pyqtSignal(str)       # init | servers | best | download | upload | saving | done | canceled | error
     log = pyqtSignal(str)

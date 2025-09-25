@@ -21,11 +21,9 @@ class UILogHandler(logging.Handler):
         self.emitter.message.emit(msg)
 
 def _console_available() -> bool:
-    """Проверить, есть ли доступный stdout (консоль/терминал).
-
-    В GUI-сборках (Nuitka --windows-console-mode=disable) stdout обычно отсутствует
-    или не является TTY, и попытки записи могут блокировать/вызывать ошибки.
-    """
+    # Проверить, есть ли доступный stdout (консоль/терминал).
+    # В GUI-сборках (Nuitka --windows-console-mode=disable) stdout обычно отсутствует
+    # или не является TTY, и попытки записи могут блокировать/вызывать ошибки.
     try:
         if sys.stdout is None:
             return False
@@ -37,7 +35,7 @@ def _console_available() -> bool:
         return False
 
 def setup_logging(ui_emitter: LogEmitter = None, level=logging.INFO, enabled: bool = True):
-    """Инициализировать логирование. Если enabled=False — обработчики не добавляются."""
+    # Инициализировать логирование. Если enabled=False — обработчики не добавляются.
     logger = logging.getLogger()
     logger.setLevel(level)
 
@@ -71,11 +69,10 @@ def setup_logging(ui_emitter: LogEmitter = None, level=logging.INFO, enabled: bo
 
 
 def apply_logging_enabled(enabled: bool, ui_emitter: LogEmitter = None, level=logging.INFO):
-    """Динамически применить включение/выключение логов.
-
-    - Если enabled=True, убедиться, что StreamHandler и UILogHandler присутствуют
-    - Если enabled=False, удалить StreamHandler и UILogHandler
-    """
+    # Динамически применить включение/выключение логов.
+    # Если enabled=True, убедиться, что StreamHandler и UILogHandler присутствуют
+    # Если enabled=False, удалить StreamHandler и UILogHandler
+ 
     logger = logging.getLogger()
     fmt = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s', datefmt='%H:%M:%S')
 
@@ -85,7 +82,7 @@ def apply_logging_enabled(enabled: bool, ui_emitter: LogEmitter = None, level=lo
                 logger.removeHandler(h)
         return
 
-    # enabled True -> ensure handlers
+    # включить True -> ensure handlers
     if _console_available() and not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
         try:
             ch = logging.StreamHandler(stream=sys.stdout)
