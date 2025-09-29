@@ -27,6 +27,8 @@ _DEFAULTS: Dict[str, Any] = {
     "engine": "python",      # Движок измерения: 'python' (встроенная библиотека speedtest-cli) | 'ookla' (официальный speedtest.exe)
     "ookla_path": "",        # Путь к speedtest.exe (если пусто — ищется в PATH)
     "ookla_timeout": 90,     # Таймаут выполнения speedtest.exe (секунды)
+    "accent_color": "blue",  # Акцентный цвет: blue | green | purple | red | orange | pink
+    "max_history_records": 1000,  # Максимальное количество записей в истории
 }
 
 

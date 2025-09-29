@@ -31,7 +31,8 @@ def main():
 
     # Импорт qfluentwidgets после создания QApplication
     try:
-        from qfluentwidgets import setTheme, Theme
+        from qfluentwidgets import setTheme, Theme, setThemeColor
+        from PyQt5.QtGui import QColor
     except Exception:
         print('Требуется установленный пакет PyQt-Fluent-Widgets. Установите его и попробуйте снова.')
         return
@@ -51,6 +52,22 @@ def main():
         setTheme(Theme.DARK)
     else:
         setTheme(Theme.LIGHT)
+    
+    # Применить акцентный цвет
+    accent_color = str(settings.get('accent_color', 'blue'))
+    colors = {
+        'blue': '#0078D4',
+        'green': '#10893E',
+        'purple': '#881798',
+        'red': '#E81123',
+        'orange': '#FF8C00',
+        'pink': '#E3008C'
+    }
+    accent_hex = colors.get(accent_color, '#0078D4')
+    try:
+        setThemeColor(QColor(accent_hex))
+    except Exception:
+        pass
 
     setup_logging(ui_emitter=emitter, enabled=True)
 
