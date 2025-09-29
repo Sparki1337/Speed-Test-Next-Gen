@@ -49,15 +49,15 @@
 ## Скриншоты
 
 ### Главный экран
-![Главный экран](docs/screenshots/1.png)
+![Главный экран](docs/screenshots/Main.png)
 
 ### Выбор сервера
-![Выбор сервера](docs/screenshots/2.png)
+![Выбор сервера](docs/screenshots/Servers.png)
 
-![История тестов](docs/screenshots/3.png)
+![История тестов](docs/screenshots/History.png)
 
 ### Настройки
-![Настройки](docs/screenshots/4.png)
+![Настройки](docs/screenshots/Settings.png)
 
 ## Структура проекта
 
