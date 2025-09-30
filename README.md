@@ -229,16 +229,23 @@ fluent_speedtest/
 Рекомендуется использовать готовые скрипты из папки `build_scripts/`:
 
 ```powershell
-# Сборка в папку (standalone)
-python build_scripts\build_folder.py -v 1.2.0
+# Сборка в папку (standalone) - быстрее, но больше файлов
+python build_scripts\build_folder.py
 
-# Сборка в один файл (onefile)
-python build_scripts\build_onefile.py -v 1.2.0
+# Сборка в один файл (onefile) - медленнее, но удобнее
+python build_scripts\build_onefile.py
+
+# Или указать версию вручную:
+python build_scripts\build_folder.py -v 1.3.0
+python build_scripts\build_onefile.py -v 1.3.0
 ```
 
-Скрипты автоматически подберут компилятор: для Python 3.13+ будет использован MSVC, для более ранних — MinGW-w64.
-
+**Особенности:**
+- Скрипты **автоматически получают версию** из `version.py`
+- Автоматический выбор компилятора: Python 3.13+ → MSVC, более ранние → MinGW-w64
+- Включены все необходимые пакеты: PyQt5, QFluentWidgets, openpyxl, speedtest-cli
 - Иконка exe берётся из `assets/app.ico`
+- Результат сборки: `build/SpeedTestNextgen.dist/` или `build/SpeedTestNextgen.exe`
 
 ## Благодарности
 
