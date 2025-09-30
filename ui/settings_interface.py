@@ -75,9 +75,32 @@ class SettingsInterface(QWidget):
         self.ooklaTimeoutRow.addWidget(self.ooklaTimeoutLabel)
         self.ooklaTimeoutRow.addWidget(self.ooklaTimeoutBox)
 
+        # Акцентный цвет
+        self.accentColorRow = QHBoxLayout()
+        self.accentColorLabel = BodyLabel('Акцентный цвет:')
+        self.accentColorBox = ComboBox(self)
+        self.accentColorBox.addItem('Синий', userData='blue')
+        self.accentColorBox.addItem('Зелёный', userData='green')
+        self.accentColorBox.addItem('Фиолетовый', userData='purple')
+        self.accentColorBox.addItem('Красный', userData='red')
+        self.accentColorBox.addItem('Оранжевый', userData='orange')
+        self.accentColorBox.addItem('Розовый', userData='pink')
+        self.accentColorRow.addWidget(self.accentColorLabel)
+        self.accentColorRow.addWidget(self.accentColorBox)
+
+        # Лимит записей истории
+        self.maxRecordsRow = QHBoxLayout()
+        self.maxRecordsLabel = BodyLabel('Макс. записей истории:')
+        self.maxRecordsBox = ComboBox(self)
+        self.maxRecordsBox.addItems(['100', '500', '1000', '2000', '5000', 'Без ограничений'])
+        self.maxRecordsRow.addWidget(self.maxRecordsLabel)
+        self.maxRecordsRow.addWidget(self.maxRecordsBox)
+
         self.vBox.addWidget(self.title)
         self.vBox.addLayout(self.unitsRow)
         self.vBox.addLayout(self.themeRow)
+        self.vBox.addLayout(self.accentColorRow)
+        self.vBox.addLayout(self.maxRecordsRow)
         self.vBox.addLayout(self.engineRow)
         self.vBox.addLayout(self.ooklaPathRow)
         self.vBox.addLayout(self.ooklaTimeoutRow)
@@ -103,6 +126,21 @@ class SettingsInterface(QWidget):
             self.ooklaTimeoutBox.setCurrentText(str(timeout_val))
         else:
             self.ooklaTimeoutBox.setCurrentText('90')
+        # accent color
+        accent_color = str(self.settings.get('accent_color', 'blue'))
+        accent_idx = self.accentColorBox.findData(accent_color)
+        if accent_idx >= 0:
+            self.accentColorBox.setCurrentIndex(accent_idx)
+        else:
+            self.accentColorBox.setCurrentIndex(0)
+        # max records
+        max_records = int(self.settings.get('max_history_records', 1000))
+        if max_records >= 999999:
+            self.maxRecordsBox.setCurrentText('Без ограничений')
+        elif str(max_records) in ['100', '500', '1000', '2000', '5000']:
+            self.maxRecordsBox.setCurrentText(str(max_records))
+        else:
+            self.maxRecordsBox.setCurrentText('1000')
 
         # первичная настройка видимости
         self._apply_engine_visibility()
@@ -110,6 +148,8 @@ class SettingsInterface(QWidget):
         # События
         self.unitsBox.currentTextChanged.connect(self.on_units_changed)
         self.themeBox.currentTextChanged.connect(self.on_theme_changed)
+        self.accentColorBox.currentIndexChanged.connect(self.on_accent_color_changed)
+        self.maxRecordsBox.currentTextChanged.connect(self.on_max_records_changed)
         self.engineBox.currentIndexChanged.connect(self.on_engine_changed)
         self.ooklaBrowseBtn.clicked.connect(self.on_browse_ookla)
         # сохраняем путь по завершении редактирования
@@ -168,3 +208,44 @@ class SettingsInterface(QWidget):
             val = 90
         self.settings.set('ookla_timeout', val)
         self._info('Таймаут Ookla сохранён')
+
+    def on_accent_color_changed(self, _idx: int):
+        data = self.accentColorBox.currentData()
+        color = str(data or 'blue')
+        self.settings.set('accent_color', color)
+        self._apply_accent_color(color)
+        self._info('Акцентный цвет сохранён')
+
+    def on_max_records_changed(self, v: str):
+        if v == 'Без ограничений':
+            val = 999999999
+        else:
+            try:
+                val = int(v)
+            except Exception:
+                val = 1000
+        self.settings.set('max_history_records', val)
+        self._info('Лимит записей истории сохранён')
+
+    def _apply_accent_color(self, color: str):
+        """Применить акцентный цвет к элементам интерфейса."""
+        # Цветовая палитра
+        colors = {
+            'blue': '#0078D4',
+            'green': '#10893E',
+            'purple': '#881798',
+            'red': '#E81123',
+            'orange': '#FF8C00',
+            'pink': '#E3008C'
+        }
+        
+        accent_hex = colors.get(color, '#0078D4')
+        
+        # Применяем стиль к кнопкам (можно расширить на другие элементы)
+        try:
+            from qfluentwidgets import setThemeColor
+            from PyQt5.QtGui import QColor
+            setThemeColor(QColor(accent_hex))
+        except Exception:
+            # Если не удалось применить через QFluentWidgets, игнорируем
+            pass
