@@ -12,6 +12,7 @@ from qfluentwidgets import (
     InfoBarPosition,
     setTheme,
     Theme,
+    SwitchButton,
 )
 
 try:
@@ -96,11 +97,21 @@ class SettingsInterface(QWidget):
         self.maxRecordsRow.addWidget(self.maxRecordsLabel)
         self.maxRecordsRow.addWidget(self.maxRecordsBox)
 
+        # Анонимный режим
+        self.anonymousModeRow = QHBoxLayout()
+        self.anonymousModeLabel = BodyLabel('Анонимный режим (не сохранять историю):')
+        self.anonymousModeSwitch = SwitchButton(self)
+        self.anonymousModeSwitch.setOnText('Вкл')
+        self.anonymousModeSwitch.setOffText('Выкл')
+        self.anonymousModeRow.addWidget(self.anonymousModeLabel)
+        self.anonymousModeRow.addWidget(self.anonymousModeSwitch)
+
         self.vBox.addWidget(self.title)
         self.vBox.addLayout(self.unitsRow)
         self.vBox.addLayout(self.themeRow)
         self.vBox.addLayout(self.accentColorRow)
         self.vBox.addLayout(self.maxRecordsRow)
+        self.vBox.addLayout(self.anonymousModeRow)
         self.vBox.addLayout(self.engineRow)
         self.vBox.addLayout(self.ooklaPathRow)
         self.vBox.addLayout(self.ooklaTimeoutRow)
@@ -141,6 +152,9 @@ class SettingsInterface(QWidget):
             self.maxRecordsBox.setCurrentText(str(max_records))
         else:
             self.maxRecordsBox.setCurrentText('1000')
+        # anonymous mode
+        anonymous_mode = bool(self.settings.get('anonymous_mode', False))
+        self.anonymousModeSwitch.setChecked(anonymous_mode)
 
         # первичная настройка видимости
         self._apply_engine_visibility()
@@ -150,6 +164,7 @@ class SettingsInterface(QWidget):
         self.themeBox.currentTextChanged.connect(self.on_theme_changed)
         self.accentColorBox.currentIndexChanged.connect(self.on_accent_color_changed)
         self.maxRecordsBox.currentTextChanged.connect(self.on_max_records_changed)
+        self.anonymousModeSwitch.checkedChanged.connect(self.on_anonymous_mode_changed)
         self.engineBox.currentIndexChanged.connect(self.on_engine_changed)
         self.ooklaBrowseBtn.clicked.connect(self.on_browse_ookla)
         # сохраняем путь по завершении редактирования
@@ -226,6 +241,11 @@ class SettingsInterface(QWidget):
                 val = 1000
         self.settings.set('max_history_records', val)
         self._info('Лимит записей истории сохранён')
+
+    def on_anonymous_mode_changed(self, checked: bool):
+        self.settings.set('anonymous_mode', checked)
+        status = 'включён' if checked else 'выключен'
+        self._info(f'Анонимный режим {status}')
 
     def _apply_accent_color(self, color: str):
         """Применить акцентный цвет к элементам интерфейса."""
