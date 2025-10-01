@@ -114,19 +114,19 @@ python -m fluent_speedtest
 
 # ШАГ 9: Закоммитить изменение статуса
 git add version.py
-git commit -m "release: v1.3.0 stable"
+git commit -m "release: v1.3.1 stable"
 
 # ШАГ 10: Запушить в main
 git push origin main
 
 # ШАГ 11: Создать тег для релиза
-git tag -a v1.3.0 -m "Release v1.3.0"
+git tag -a v1.3.1 -m "Release v1.3.1"
 git push origin main --tags
 
-# ШАГ 12: Создать GitHub Release
+# ШАГ 12: Создать GitHub Release  
 # 1. Перейти на GitHub в раздел Releases
 # 2. Нажать "Create a new release"
-# 3. Выбрать тег v1.3.0
+# 3. Выбрать тег v1.3.1
 # 4. Прикрепить файл build/SpeedTestNextgen.exe
 # 5. Описать изменения из CHANGELOG.md
 # 6. Опубликовать релиз
