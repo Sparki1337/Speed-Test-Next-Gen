@@ -1,8 +1,8 @@
 # coding: utf-8
 """Информация о версии приложения."""
 
-__version__ = "1.3.0"
-__status__ = "Beta"  # Beta, Stable, RC
+__version__ = "1.4.0"
+__status__ = "Stable"  # Beta, Stable, RC
 
 def get_version_string() -> str:
     """Получить полную строку версии."""
