@@ -20,6 +20,12 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def append_result(result: Dict) -> None:
+    # Проверка анонимного режима
+    settings = get_settings()
+    if settings.get('anonymous_mode', False):
+        # В анонимном режиме не сохраняем историю
+        return
+    
     RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
     with open(RESULTS_FILE, 'a', encoding='utf-8') as f:
         f.write(json.dumps(result, ensure_ascii=False) + '\n')

@@ -29,6 +29,7 @@ _DEFAULTS: Dict[str, Any] = {
     "ookla_timeout": 90,     # Таймаут выполнения speedtest.exe (секунды)
     "accent_color": "blue",  # Акцентный цвет: blue | green | purple | red | orange | pink
     "max_history_records": 1000,  # Максимальное количество записей в истории
+    "anonymous_mode": False,  # Анонимный режим: не сохранять историю тестов
 }
 
 

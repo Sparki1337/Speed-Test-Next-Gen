@@ -55,6 +55,9 @@ class AppWindow(FluentWindow):
 
         # Нижняя часть (настройки)
         self.addSubInterface(self.settingsInterface, FIF.SETTING, 'Настройки', NavigationItemPosition.BOTTOM)
+        
+        # Подключение обработчика переключения вкладок
+        self.stackedWidget.currentChanged.connect(self._on_tab_changed)
 
     def initWindow(self):
         self.resize(980, 700)
@@ -99,6 +102,13 @@ class AppWindow(FluentWindow):
         else:
             self.networkStatusIcon.setStyleSheet('font-size: 14px; color: #E81123;')  # Красный
             self.networkStatusLabel.setText('Нет подключения')
+
+    def _on_tab_changed(self, index: int):
+        """Обработчик переключения вкладок."""
+        current_widget = self.stackedWidget.widget(index)
+        # Обновляем историю при переходе на вкладку истории
+        if current_widget == self.historyInterface:
+            self.historyInterface.refresh()
 
     def closeEvent(self, event):
         """Остановить мониторинг сети при закрытии окна."""
