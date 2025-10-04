@@ -106,12 +106,36 @@ class SettingsInterface(QWidget):
         self.anonymousModeRow.addWidget(self.anonymousModeLabel)
         self.anonymousModeRow.addWidget(self.anonymousModeSwitch)
 
+        # Уровень логирования
+        self.logLevelRow = QHBoxLayout()
+        self.logLevelLabel = BodyLabel('Уровень логирования:')
+        self.logLevelBox = ComboBox(self)
+        self.logLevelBox.addItem('DEBUG (все подробности)', userData='DEBUG')
+        self.logLevelBox.addItem('INFO (обычный)', userData='INFO')
+        self.logLevelBox.addItem('WARNING (предупреждения)', userData='WARNING')
+        self.logLevelBox.addItem('ERROR (только ошибки)', userData='ERROR')
+        self.logLevelRow.addWidget(self.logLevelLabel)
+        self.logLevelRow.addWidget(self.logLevelBox)
+
+        # Буферизация логов
+        self.logBufferRow = QHBoxLayout()
+        self.logBufferLabel = BodyLabel('Буферизация логов (записей):')
+        self.logBufferBox = ComboBox(self)
+        self.logBufferBox.addItem('Без буферизации', userData='0')
+        self.logBufferBox.addItem('10 записей', userData='10')
+        self.logBufferBox.addItem('50 записей', userData='50')
+        self.logBufferBox.addItem('100 записей', userData='100')
+        self.logBufferRow.addWidget(self.logBufferLabel)
+        self.logBufferRow.addWidget(self.logBufferBox)
+
         self.vBox.addWidget(self.title)
         self.vBox.addLayout(self.unitsRow)
         self.vBox.addLayout(self.themeRow)
         self.vBox.addLayout(self.accentColorRow)
         self.vBox.addLayout(self.maxRecordsRow)
         self.vBox.addLayout(self.anonymousModeRow)
+        self.vBox.addLayout(self.logLevelRow)
+        self.vBox.addLayout(self.logBufferRow)
         self.vBox.addLayout(self.engineRow)
         self.vBox.addLayout(self.ooklaPathRow)
         self.vBox.addLayout(self.ooklaTimeoutRow)
@@ -155,6 +179,22 @@ class SettingsInterface(QWidget):
         # anonymous mode
         anonymous_mode = bool(self.settings.get('anonymous_mode', False))
         self.anonymousModeSwitch.setChecked(anonymous_mode)
+        
+        # log level
+        log_level = str(self.settings.get('log_level', 'INFO'))
+        log_level_idx = self.logLevelBox.findData(log_level)
+        if log_level_idx >= 0:
+            self.logLevelBox.setCurrentIndex(log_level_idx)
+        else:
+            self.logLevelBox.setCurrentIndex(1)  # INFO по умолчанию
+        
+        # log buffer size
+        log_buffer_size = int(self.settings.get('log_buffer_size', 0))
+        buffer_idx = self.logBufferBox.findData(str(log_buffer_size))
+        if buffer_idx >= 0:
+            self.logBufferBox.setCurrentIndex(buffer_idx)
+        else:
+            self.logBufferBox.setCurrentIndex(0)  # Без буферизации по умолчанию
 
         # первичная настройка видимости
         self._apply_engine_visibility()
@@ -165,6 +205,8 @@ class SettingsInterface(QWidget):
         self.accentColorBox.currentIndexChanged.connect(self.on_accent_color_changed)
         self.maxRecordsBox.currentTextChanged.connect(self.on_max_records_changed)
         self.anonymousModeSwitch.checkedChanged.connect(self.on_anonymous_mode_changed)
+        self.logLevelBox.currentIndexChanged.connect(self.on_log_level_changed)
+        self.logBufferBox.currentIndexChanged.connect(self.on_log_buffer_changed)
         self.engineBox.currentIndexChanged.connect(self.on_engine_changed)
         self.ooklaBrowseBtn.clicked.connect(self.on_browse_ookla)
         # сохраняем путь по завершении редактирования
@@ -230,6 +272,39 @@ class SettingsInterface(QWidget):
         self.settings.set('accent_color', color)
         self._apply_accent_color(color)
         self._info('Акцентный цвет сохранён')
+    
+    def on_log_level_changed(self, _idx: int):
+        """Обработчик изменения уровня логирования."""
+        import logging
+        from core.logging_system import get_logging_system
+        
+        data = self.logLevelBox.currentData()
+        level_name = str(data or 'INFO')
+        self.settings.set('log_level', level_name)
+        
+        # Применить новый уровень логирования
+        level = getattr(logging, level_name, logging.INFO)
+        logging_system = get_logging_system()
+        logging_system.set_level(level)
+        
+        self._info(f'Уровень логирования изменён на {level_name}')
+    
+    def on_log_buffer_changed(self, _idx: int):
+        """Обработчик изменения размера буфера логов."""
+        from core.logging_system import get_logging_system
+        
+        data = self.logBufferBox.currentData()
+        buffer_size = int(data or 0)
+        self.settings.set('log_buffer_size', buffer_size)
+        
+        # Применить новый размер буфера
+        logging_system = get_logging_system()
+        logging_system.set_buffer_size(buffer_size)
+        
+        if buffer_size == 0:
+            self._info('Буферизация логов отключена')
+        else:
+            self._info(f'Буферизация логов установлена на {buffer_size} записей')
 
     def on_max_records_changed(self, v: str):
         if v == 'Без ограничений':
