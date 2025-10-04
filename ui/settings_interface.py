@@ -17,8 +17,10 @@ from qfluentwidgets import (
 
 try:
     from ..core.settings import get_settings
+    from ..core.logging_system import get_logger, LogCategory
 except ImportError:
     from core.settings import get_settings  # type: ignore
+    from core.logging_system import get_logger, LogCategory  # type: ignore
 
 
 class SettingsInterface(QWidget):
@@ -26,6 +28,9 @@ class SettingsInterface(QWidget):
         super().__init__(parent=parent)
         self.setObjectName('settings-interface')
         self.settings = get_settings()
+        self.logger = get_logger(LogCategory.SETTINGS)
+        
+        self.logger.info("Инициализация интерфейса настроек")
 
         self.vBox = QVBoxLayout(self)
         self.vBox.setContentsMargins(24, 24, 24, 24)
@@ -220,10 +225,12 @@ class SettingsInterface(QWidget):
         InfoBar.success(title='Готово', content=text, orient=Qt.Horizontal, position=InfoBarPosition.TOP, parent=self)
 
     def on_units_changed(self, v: str):
+        self.logger.info(f"Изменены единицы скорости: {v}")
         self.settings.set('units', v)
         self._info('Единицы скорости сохранены')
 
     def on_theme_changed(self, v: str):
+        self.logger.info(f"Изменена тема: {v}")
         self.settings.set('theme', v)
         if v == 'Dark':
             setTheme(Theme.DARK)

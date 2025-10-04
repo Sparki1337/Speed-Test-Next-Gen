@@ -15,6 +15,7 @@ try:
     from .ui.settings_interface import SettingsInterface
     from .ui.servers_interface import ServersInterface
     from .core.network_monitor import NetworkMonitor
+    from .core.logging_system import get_logger, LogCategory
     from .version import get_window_title
 except ImportError:
     # Запуск без пакета (python app_window.py / python main.py в каталоге)
@@ -23,13 +24,17 @@ except ImportError:
     from ui.settings_interface import SettingsInterface  # type: ignore
     from ui.servers_interface import ServersInterface  # type: ignore
     from core.network_monitor import NetworkMonitor  # type: ignore
+    from core.logging_system import get_logger, LogCategory  # type: ignore
     from version import get_window_title  # type: ignore
 
 
 class AppWindow(FluentWindow):
     def __init__(self, emitter=None):
         super().__init__()
+        self.logger = get_logger(LogCategory.UI)
         self.emitter = emitter
+        
+        self.logger.info("Инициализация главного окна приложения")
 
         self.testInterface = TestInterface(emitter=self.emitter, parent=self)
         self.serversInterface = ServersInterface(parent=self)
@@ -48,6 +53,8 @@ class AppWindow(FluentWindow):
         self.networkMonitor.start()
 
     def initNavigation(self):
+        self.logger.debug("Инициализация навигации")
+        
         # Основные разделы
         self.addSubInterface(self.testInterface, FIF.SPEED_HIGH, 'Тест скорости')
         self.addSubInterface(self.serversInterface, FIF.WIFI, 'Серверы')
@@ -58,8 +65,12 @@ class AppWindow(FluentWindow):
         
         # Подключение обработчика переключения вкладок
         self.stackedWidget.currentChanged.connect(self._on_tab_changed)
+        
+        self.logger.info("Навигация инициализирована: 4 вкладки")
 
     def initWindow(self):
+        self.logger.debug("Настройка параметров окна")
+        
         self.resize(980, 700)
         self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
         self.setWindowTitle(get_window_title())
@@ -67,6 +78,12 @@ class AppWindow(FluentWindow):
         desktop = QApplication.desktop().availableGeometry()
         w, h = desktop.width(), desktop.height()
         self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        
+        self.logger.info("Окно настроено", data={
+            'width': 980,
+            'height': 700,
+            'title': get_window_title()
+        })
 
     def initNetworkIndicator(self):
         """Инициализировать индикатор статуса интернета в заголовке окна."""
@@ -106,11 +123,29 @@ class AppWindow(FluentWindow):
     def _on_tab_changed(self, index: int):
         """Обработчик переключения вкладок."""
         current_widget = self.stackedWidget.widget(index)
+        
+        # Определить имя вкладки
+        tab_name = "Неизвестно"
+        if current_widget == self.testInterface:
+            tab_name = "Тест скорости"
+        elif current_widget == self.serversInterface:
+            tab_name = "Серверы"
+        elif current_widget == self.historyInterface:
+            tab_name = "История"
+        elif current_widget == self.settingsInterface:
+            tab_name = "Настройки"
+        
+        self.logger.info(f"Переключение на вкладку: {tab_name}", data={
+            'tab_name': tab_name,
+            'tab_index': index
+        })
+        
         # Обновляем историю при переходе на вкладку истории
         if current_widget == self.historyInterface:
             self.historyInterface.refresh()
 
     def closeEvent(self, event):
         """Остановить мониторинг сети при закрытии окна."""
+        self.logger.info("Закрытие главного окна")
         self.networkMonitor.stop()
         super().closeEvent(event)
