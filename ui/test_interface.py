@@ -97,10 +97,12 @@ class TestInterface(QWidget):
         self.preciseBtn = PrimaryPushButton('Точный тест', self, icon=FIF.PLAY)
         self.stopBtn = PushButton('Стоп', self, icon=FIF.STOP_WATCH)
         self.stopBtn.setDisabled(True)
+        self.clearLogsBtn = PushButton('Очистить логи', self, icon=FIF.DELETE)
         self.buttonsRow.addStretch(1)
         self.buttonsRow.addWidget(self.startBtn)
         self.buttonsRow.addWidget(self.preciseBtn)
         self.buttonsRow.addWidget(self.stopBtn)
+        self.buttonsRow.addWidget(self.clearLogsBtn)
         self.buttonsRow.addStretch(1)
 
         self.logView = LogViewClass(self)
@@ -121,6 +123,7 @@ class TestInterface(QWidget):
         self.startBtn.clicked.connect(self.start_test)
         self.preciseBtn.clicked.connect(self.start_precise_test)
         self.stopBtn.clicked.connect(self.stop_test)
+        self.clearLogsBtn.clicked.connect(self.clear_logs)
 
         # подключение UI logger emitter
         if emitter is not None:
@@ -233,6 +236,12 @@ class TestInterface(QWidget):
         if self.worker:
             self.worker.cancel()
             self.ui_logger.info("Отправлен сигнал отмены теста")
+
+    def clear_logs(self):
+        """Очистить область логов."""
+        self.ui_logger.info("Пользователь нажал кнопку 'Очистить логи'")
+        self.logView.clear()
+        self._info('Логи очищены')
 
     def _on_result(self, result: dict):
         # сохранение результата

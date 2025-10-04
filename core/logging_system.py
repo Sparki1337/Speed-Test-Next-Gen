@@ -75,9 +75,9 @@ class HumanReadableFormatter(logging.Formatter):
         message = record.getMessage()
         
         if self.show_category:
-            log_line = f"{timestamp} | {level:8} | {category:8} | {message}"
+            log_line = f"{timestamp} {level:8} {category:8} {message}"
         else:
-            log_line = f"{timestamp} | {level:8} | {message}"
+            log_line = f"{timestamp} {level:8} {message}"
         
         # Добавить трассировку исключения если есть
         if record.exc_info:
