@@ -1,14 +1,25 @@
 # coding: utf-8
+"""
+Утилиты логирования для Fluent Speedtest.
+Обеспечивает совместимость со старым кодом и интеграцию с новой системой логирования.
+"""
 import logging
-import sys
 from PyQt5.QtCore import QObject, pyqtSignal
+
+try:
+    from .core.logging_system import get_logging_system, LogCategory
+except ImportError:
+    from core.logging_system import get_logging_system, LogCategory  # type: ignore
 
 
 class LogEmitter(QObject):
+    """Эмиттер для отправки сообщений логов в UI через Qt сигналы."""
     message = pyqtSignal(str)
 
 
 class UILogHandler(logging.Handler):
+    """Обработчик для вывода логов в UI компонент."""
+    
     def __init__(self, emitter: LogEmitter):
         super().__init__()
         self.emitter = emitter
@@ -20,80 +31,56 @@ class UILogHandler(logging.Handler):
             msg = record.getMessage()
         self.emitter.message.emit(msg)
 
-def _console_available() -> bool:
-    # Проверить, есть ли доступный stdout (консоль/терминал).
-    # В GUI-сборках (Nuitka --windows-console-mode=disable) stdout обычно отсутствует
-    # или не является TTY, и попытки записи могут блокировать/вызывать ошибки.
+
+def setup_logging(ui_emitter: LogEmitter = None, level: int = logging.INFO, enabled: bool = True):
+    """
+    Инициализировать систему логирования (обратная совместимость со старым кодом).
+    
+    Args:
+        ui_emitter: Эмиттер для отправки логов в UI
+        level: Уровень логирования
+        enabled: Включить логирование
+    
+    Returns:
+        Root logger
+    """
+    logging_system = get_logging_system()
+    
+    # Получить настройки буферизации из настроек приложения
+    buffer_size = 0
     try:
-        if sys.stdout is None:
-            return False
-        is_tty = getattr(sys.stdout, "isatty", lambda: False)()
-        # Иногда isatty() False, но писать можно — в таком случае не добавляем StreamHandler,
-        # так как пользы мало. Возвращаем строго только TTY.
-        return bool(is_tty)
+        from core.settings import get_settings
+        settings = get_settings()
+        buffer_size = int(settings.get('log_buffer_size', 0))
     except Exception:
-        return False
-
-def setup_logging(ui_emitter: LogEmitter = None, level=logging.INFO, enabled: bool = True):
-    # Инициализировать логирование. Если enabled=False — обработчики не добавляются.
-    logger = logging.getLogger()
-    logger.setLevel(level)
-
-    fmt = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s', datefmt='%H:%M:%S')
-
-    if not enabled:
-        # удалить все наши обработчики, если они есть
-        for h in list(logger.handlers):
-            if isinstance(h, (logging.StreamHandler, UILogHandler)):
-                logger.removeHandler(h)
-        return logger
-
-    # не дублировать обработчики
-    if _console_available() and not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
-        try:
-            ch = logging.StreamHandler(stream=sys.stdout)
-            ch.setLevel(level)
-            ch.setFormatter(fmt)
-            logger.addHandler(ch)
-        except Exception:
-            # В GUI-режиме безопасно игнорируем невозможность добавить StreamHandler
-            pass
-
-    if ui_emitter and not any(isinstance(h, UILogHandler) for h in logger.handlers):
-        uh = UILogHandler(ui_emitter)
-        uh.setLevel(level)
-        uh.setFormatter(fmt)
-        logger.addHandler(uh)
-
-    return logger
+        pass
+    
+    if enabled:
+        logging_system.initialize(
+            log_level=level,
+            enable_console=True,
+            enable_file=True,
+            enable_ui=bool(ui_emitter),
+            ui_emitter=ui_emitter,
+            buffer_size=buffer_size,
+            max_log_days=7
+        )
+    
+    return logging.getLogger()
 
 
-def apply_logging_enabled(enabled: bool, ui_emitter: LogEmitter = None, level=logging.INFO):
-    # Динамически применить включение/выключение логов.
-    # Если enabled=True, убедиться, что StreamHandler и UILogHandler присутствуют
-    # Если enabled=False, удалить StreamHandler и UILogHandler
- 
-    logger = logging.getLogger()
-    fmt = logging.Formatter('%(asctime)s | %(levelname)s | %(message)s', datefmt='%H:%M:%S')
-
-    if not enabled:
-        for h in list(logger.handlers):
-            if isinstance(h, (logging.StreamHandler, UILogHandler)):
-                logger.removeHandler(h)
-        return
-
-    # включить True -> ensure handlers
-    if _console_available() and not any(isinstance(h, logging.StreamHandler) for h in logger.handlers):
-        try:
-            ch = logging.StreamHandler(stream=sys.stdout)
-            ch.setLevel(level)
-            ch.setFormatter(fmt)
-            logger.addHandler(ch)
-        except Exception:
-            pass
-
-    if ui_emitter and not any(isinstance(h, UILogHandler) for h in logger.handlers):
-        uh = UILogHandler(ui_emitter)
-        uh.setLevel(level)
-        uh.setFormatter(fmt)
-        logger.addHandler(uh)
+def apply_logging_enabled(enabled: bool, ui_emitter: LogEmitter = None, level: int = logging.INFO):
+    """
+    Динамически применить включение/выключение логов (обратная совместимость).
+    
+    Args:
+        enabled: Включить логирование
+        ui_emitter: Эмиттер для отправки логов в UI
+        level: Уровень логирования
+    """
+    if enabled:
+        setup_logging(ui_emitter=ui_emitter, level=level, enabled=True)
+    else:
+        # Выключить логирование
+        logging_system = get_logging_system()
+        logging_system.shutdown()

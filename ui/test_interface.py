@@ -50,11 +50,13 @@ try:
     from ..core.worker import SpeedtestWorker, PreciseSpeedtestWorker
     from ..core.storage import append_result
     from ..core.settings import get_settings
+    from ..core.logging_system import get_logger, LogCategory
 except ImportError:
     # Запуск без пакета: импорт из локальной папки
     from core.worker import SpeedtestWorker, PreciseSpeedtestWorker  # type: ignore
     from core.storage import append_result  # type: ignore
     from core.settings import get_settings  # type: ignore
+    from core.logging_system import get_logger, LogCategory  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +66,9 @@ class TestInterface(QWidget):
         super().__init__(parent=parent)
         self.setObjectName('test-interface')
         self.settings = get_settings()
+        self.ui_logger = get_logger(LogCategory.UI)
+        
+        self.ui_logger.info("Инициализация интерфейса тестирования")
 
         # UI
         self.vBox = QVBoxLayout(self)
@@ -92,10 +97,12 @@ class TestInterface(QWidget):
         self.preciseBtn = PrimaryPushButton('Точный тест', self, icon=FIF.PLAY)
         self.stopBtn = PushButton('Стоп', self, icon=FIF.STOP_WATCH)
         self.stopBtn.setDisabled(True)
+        self.clearLogsBtn = PushButton('Очистить логи', self, icon=FIF.DELETE)
         self.buttonsRow.addStretch(1)
         self.buttonsRow.addWidget(self.startBtn)
         self.buttonsRow.addWidget(self.preciseBtn)
         self.buttonsRow.addWidget(self.stopBtn)
+        self.buttonsRow.addWidget(self.clearLogsBtn)
         self.buttonsRow.addStretch(1)
 
         self.logView = LogViewClass(self)
@@ -116,6 +123,7 @@ class TestInterface(QWidget):
         self.startBtn.clicked.connect(self.start_test)
         self.preciseBtn.clicked.connect(self.start_precise_test)
         self.stopBtn.clicked.connect(self.stop_test)
+        self.clearLogsBtn.clicked.connect(self.clear_logs)
 
         # подключение UI logger emitter
         if emitter is not None:
@@ -160,8 +168,11 @@ class TestInterface(QWidget):
             self.ring.hide()
 
     def start_test(self):
+        self.ui_logger.info("Пользователь нажал кнопку 'Тест'")
+        
         if self.thread is not None:
             self._warn('Тест уже выполняется')
+            self.ui_logger.warning("Попытка запустить тест когда тест уже выполняется")
             return
 
         self.logView.clear()
@@ -184,10 +195,14 @@ class TestInterface(QWidget):
         self.worker.finished.connect(self._on_finished)
 
         self.thread.start()
+        self.ui_logger.info("Запущен обычный тест скорости")
 
     def start_precise_test(self):
+        self.ui_logger.info("Пользователь нажал кнопку 'Точный тест'")
+        
         if self.thread is not None:
             self._warn('Тест уже выполняется')
+            self.ui_logger.warning("Попытка запустить точный тест когда тест уже выполняется")
             return
 
         self.logView.clear()
@@ -213,10 +228,20 @@ class TestInterface(QWidget):
         self.worker.finished.connect(self._on_finished)
 
         self.thread.start()
+        self.ui_logger.info("Запущен точный тест скорости (3 прогона)")
 
     def stop_test(self):
+        self.ui_logger.info("Пользователь нажал кнопку 'Стоп'")
+        
         if self.worker:
             self.worker.cancel()
+            self.ui_logger.info("Отправлен сигнал отмены теста")
+
+    def clear_logs(self):
+        """Очистить область логов."""
+        self.ui_logger.info("Пользователь нажал кнопку 'Очистить логи'")
+        self.logView.clear()
+        self._info('Логи очищены')
 
     def _on_result(self, result: dict):
         # сохранение результата
@@ -232,10 +257,20 @@ class TestInterface(QWidget):
         self.cardUpload.update_value(self._format_speed(u_bps))
         self.cardContainer.setVisible(True)
 
+        self.ui_logger.info("Результат теста получен и отображён", data={
+            'ping_ms': ping,
+            'download_mbps': d_bps / 1e6,
+            'upload_mbps': u_bps / 1e6,
+            'server_id': result.get('server', {}).get('id')
+        })
+
         self._info('Результат сохранён')
 
     def _apply_theme_to_cards(self, theme_name: str = None):
         theme = theme_name or str(self.settings.get('theme', 'Dark'))
+        
+        self.ui_logger.debug(f"Применение темы к карточкам результатов: {theme}")
+        
         for card in (self.cardPing, self.cardDownload, self.cardUpload):
             card.set_theme(theme)
 
@@ -243,12 +278,17 @@ class TestInterface(QWidget):
         # Если выбран движок Ookla, скрываем кнопку «Точный тест» (не поддерживается в этом режиме)
         engine = (engine_name or str(self.settings.get('engine', 'python'))).lower()
         self.preciseBtn.setVisible(engine != 'ookla')
+        
+        self.ui_logger.debug(f"Применение режима движка: {engine}, точный тест видимость: {engine != 'ookla'}")
 
     def _on_error(self, msg: str):
+        self.ui_logger.error(f"Ошибка при выполнении теста: {msg}")
         self._error(msg)
         self._append_log(f"Ошибка: {msg}")
 
     def _on_finished(self):
+        self.ui_logger.info("Тест завершён")
+        
         try:
             if self.thread:
                 self.thread.quit()
