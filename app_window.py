@@ -1,7 +1,15 @@
 # coding: utf-8
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon
-from PyQt5.QtWidgets import QApplication, QLabel, QHBoxLayout, QWidget
+from PyQt5.QtWidgets import (
+    QApplication,
+    QLabel,
+    QHBoxLayout,
+    QWidget,
+    QSystemTrayIcon,
+    QMenu,
+    QAction,
+)
 
 from qfluentwidgets import (
     FluentWindow,
@@ -33,6 +41,8 @@ class AppWindow(FluentWindow):
         super().__init__()
         self.logger = get_logger(LogCategory.UI)
         self.emitter = emitter
+        self._is_exiting = False
+        self._tray_tip_shown = False
         
         self.logger.info("Инициализация главного окна приложения")
 
@@ -48,6 +58,7 @@ class AppWindow(FluentWindow):
         self.initNavigation()
         self.initWindow()
         self.initNetworkIndicator()
+        self.initTray()
         
         # Запустить мониторинг сети
         self.networkMonitor.start()
@@ -111,6 +122,67 @@ class AppWindow(FluentWindow):
             # Если не удалось добавить в titleBar, просто скрываем
             self.networkIndicatorWidget.hide()
 
+    def initTray(self):
+        """Инициализация иконки в трее и контекстного меню."""
+        try:
+            icon = QIcon(':/qfluentwidgets/images/logo.png')
+        except Exception:
+            icon = self.windowIcon()
+
+        self.trayIcon = QSystemTrayIcon(icon, self)
+
+        menu = QMenu(self)
+
+        actionOpen = QAction("Открыть", self)
+        actionOpen.triggered.connect(self.show_main_window)
+
+        actionStart = QAction("Начать тест", self)
+        actionStart.triggered.connect(self._start_test_from_tray)
+
+        menu.addAction(actionOpen)
+        menu.addAction(actionStart)
+        menu.addSeparator()
+
+        actionQuit = QAction("Выход", self)
+        actionQuit.triggered.connect(self._quit_from_tray)
+        menu.addAction(actionQuit)
+
+        self.trayIcon.setContextMenu(menu)
+        self.trayIcon.activated.connect(self._on_tray_activated)
+        self.trayIcon.setToolTip(self.windowTitle())
+        self.trayIcon.show()
+
+    # --- ТРЕЙ: обработчики ---
+    def _on_tray_activated(self, reason: QSystemTrayIcon.ActivationReason):
+        if reason in (QSystemTrayIcon.Trigger, QSystemTrayIcon.DoubleClick):
+            self.show_main_window()
+
+    def show_main_window(self):
+        """Показать главное окно и вывести на передний план."""
+        self.show()
+        if self.isMinimized():
+            self.showNormal()
+        self.raise_()
+        self.activateWindow()
+
+    def _start_test_from_tray(self):
+        """Запуск обычного теста из трея."""
+        try:
+            self.show_main_window()
+            self.stackedWidget.setCurrentWidget(self.testInterface)
+            self.testInterface.start_test()
+        except Exception as e:
+            self.logger.error(f"Не удалось запустить тест из трея: {e}")
+
+    def _quit_from_tray(self):
+        """Полное завершение приложения из трея."""
+        self._is_exiting = True
+        try:
+            self.trayIcon.hide()
+        except Exception:
+            pass
+        QApplication.instance().quit()
+
     def _on_network_status_changed(self, is_connected: bool):
         """Обработчик изменения статуса подключения к интернету."""
         if is_connected:
@@ -145,7 +217,29 @@ class AppWindow(FluentWindow):
             self.historyInterface.refresh()
 
     def closeEvent(self, event):
-        """Остановить мониторинг сети при закрытии окна."""
-        self.logger.info("Закрытие главного окна")
-        self.networkMonitor.stop()
-        super().closeEvent(event)
+        """Сворачиваем в трей вместо выхода; выход через пункт "Выход"."""
+        if self._is_exiting:
+            self.logger.info("Закрытие приложения по запросу пользователя (трей)")
+            try:
+                self.trayIcon.hide()
+            except Exception:
+                pass
+            self.networkMonitor.stop()
+            super().closeEvent(event)
+            return
+
+        event.ignore()
+        self.hide()
+        self.logger.info("Окно скрыто в трей")
+        # Показать подсказку один раз
+        if not self._tray_tip_shown and hasattr(self, 'trayIcon') and self.trayIcon.isVisible():
+            try:
+                self.trayIcon.showMessage(
+                    "Fluent Speedtest",
+                    "Приложение продолжает работать в трее. Кликните, чтобы открыть.",
+                    QSystemTrayIcon.Information,
+                    3000,
+                )
+                self._tray_tip_shown = True
+            except Exception:
+                pass
