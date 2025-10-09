@@ -14,6 +14,6 @@ build/
 # Игнорировать IDE
 .vscode/
 *.idea/
-*.windsurf/
+*.cursor/
 *.idea/
 *.venv/
