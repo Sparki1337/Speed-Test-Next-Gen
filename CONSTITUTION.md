@@ -517,8 +517,8 @@ python set_version.py --version 1.4.0 --status Stable
 ### Контакты
 
 - **Автор:** Sparki
-- **Репозиторий:** [GitHub](https://github.com/Sparki1337/Speed)
-- **Версия проекта:** 1.3.1 Beta
+- **Репозиторий:** [GitHub](https://github.com/Sparki1337/Speed-Test-Next-Gen)
+- **Версия проекта:** 1.3.2 Beta
 
 ---
 

@@ -92,8 +92,7 @@ python build_scripts\build_folder.py
 Скрипты автоматически включают все необходимые пакеты:
 
 - **PyQt5** - GUI framework
-- **QFluentWidgets** - Fluent Design компоненты
-- **qframelesswindow** - Безрамочное окно
+- **QFluentWidgets** - Fluent Design компоненты (транзитивно тянет qframelesswindow)
 - **openpyxl** - Экспорт в Excel
 - **speedtest-cli** - Движок тестирования скорости
 

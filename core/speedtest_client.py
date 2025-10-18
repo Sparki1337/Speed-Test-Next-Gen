@@ -52,9 +52,9 @@ class SpeedtestClient:
         def _try_variants():
             # Пробуем разные варианты secure
             variants = [
+                {"timeout": 15, "secure": True},
+                {"timeout": 15, "secure": False},
                 {},
-                {"secure": True},
-                {"secure": False},
             ]
             for kwargs in variants:
                 try:
@@ -154,7 +154,12 @@ class SpeedtestClient:
             raise RuntimeError('Отменено пользователем')
 
         logger.info('Тест отдачи (upload)...')
-        u_bps = s.upload()
+        # pre_allocate=False снижает риск MemoryError на некоторых системах
+        try:
+            u_bps = s.upload(pre_allocate=False)
+        except TypeError:
+            # на старых версиях параметр может отсутствовать
+            u_bps = s.upload()
 
         ping_ms = s.results.ping
 
@@ -174,7 +179,7 @@ class SpeedtestClient:
         logger.info('Тест завершён успешно')
         return result
 
-    def list_servers(self, limit: int = 200):
+    def list_servers(self, limit: int = 300):
         # Получить список доступных серверов (упрощённый вид для UI).
         # Возвращает список словарей: id, sponsor, name (city), country, host
         s = self._create_speedtest()

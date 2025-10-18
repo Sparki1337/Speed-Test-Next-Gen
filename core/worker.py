@@ -4,12 +4,11 @@ from threading import Event
 
 from PyQt5.QtCore import QObject, pyqtSignal, pyqtSlot
 
-from .speedtest_client import SpeedtestClient
 from .settings import get_settings
 try:
-    from .ookla_client import OoklaCliClient
+    from .speedtest_service import SpeedtestService
 except ImportError:  # fallback при локальном запуске
-    from core.ookla_client import OoklaCliClient  # type: ignore
+    from core.speedtest_service import SpeedtestService  # type: ignore
 
 logger = logging.getLogger(__name__)
 
@@ -30,11 +29,6 @@ class SpeedtestWorker(QObject):
         self._cancel_event = Event()
         self._settings = get_settings()
 
-    def _format_speed(self, bps: float) -> str:
-        units = self._settings.get('units', 'Mbps')
-        if units == 'MB/s':
-            return f"{bps / 8e6:.2f} MB/s"
-        return f"{bps / 1e6:.2f} Mbps"
 
     @pyqtSlot()
     def cancel(self):
@@ -52,60 +46,14 @@ class SpeedtestWorker(QObject):
     @pyqtSlot()
     def run(self):
         try:
-            # Выбор движка: 'python' | 'ookla'
-            engine = str(self._settings.get('engine', 'python')).lower()
-            if engine == 'ookla':
-                client = OoklaCliClient()
-                logger.info('Движок: Ookla CLI')
-            else:
-                client = SpeedtestClient()
-                logger.info('Движок: Python speedtest-cli')
-
-            self.stageChanged.emit('init')
-            logger.info('Запуск теста скорости...')
+            service = SpeedtestService(
+                on_stage=lambda s: self.stageChanged.emit(s),
+                on_log=lambda m: self.log.emit(m),
+            )
+            result = service.run_single_test(cancel_event=self._cancel_event)
             if self._check_cancel():
                 return
-
-            self.stageChanged.emit('servers')
-            # Подробные этапы логируются внутри SpeedtestClient
-
-            if self._check_cancel():
-                return
-
-            self.stageChanged.emit('best')
-            if self._check_cancel():
-                return
-
-            self.stageChanged.emit('download')
-            result = client.perform_test(cancel_event=self._cancel_event)  # включает download и upload
-
-            if self._check_cancel():
-                return
-
-            self.stageChanged.emit('saving')
-            # Красивое резюме результатов в лог
-            try:
-                ping = float(result.get('ping_ms', 0))
-                d_bps = float(result.get('download_bps', 0.0))
-                u_bps = float(result.get('upload_bps', 0.0))
-                s = result.get('server', {})
-                sponsor = s.get('sponsor', '-')
-                name = s.get('name', '-')
-                country = s.get('country', '-')
-                host = s.get('host', '-')
-                sid = s.get('id', '-')
-                ts = result.get('timestamp', '-')
-
-                logger.info(
-                    f"Итог: Ping {ping:.0f} ms | Download {self._format_speed(d_bps)} | "
-                    f"Upload {self._format_speed(u_bps)} | Сервер: {sponsor} — {name}, {country} "
-                    f"({host}) [ID {sid}] | {ts}"
-                )
-            except Exception:
-                # не срываем пайплайн, если форматирование не удалось
-                pass
             self.resultReady.emit(result)
-
             self.stageChanged.emit('done')
             self.finished.emit()
         except Exception as e:
@@ -149,111 +97,17 @@ class PreciseSpeedtestWorker(QObject):
             return True
         return False
 
-    def _pick_three_server_ids(self) -> list[int]:
-        # 1) избранные из настроек
-        fav_ids = []
-        try:
-            fav_ids = [int(x) for x in (self._settings.get('favorite_server_ids', []) or [])]
-        except Exception:
-            fav_ids = []
-        seen = set()
-        picked: list[int] = []
-        for sid in fav_ids:
-            if sid and sid not in seen:
-                picked.append(sid)
-                seen.add(sid)
-                if len(picked) >= 3:
-                    return picked[:3]
-
-        # 2) если не хватило — добираем из общего списка
-        try:
-            client = SpeedtestClient()
-            servers = client.list_servers(limit=300)
-            for sv in servers:
-                sid = sv.get('id')
-                if not sid:
-                    continue
-                sid = int(sid)
-                if sid in seen:
-                    continue
-                picked.append(sid)
-                seen.add(sid)
-                if len(picked) >= 3:
-                    break
-        except Exception:
-            # если совсем не удалось получить список — вернём то, что есть
-            pass
-        return picked[:3]
-
     @pyqtSlot()
     def run(self):
         try:
-            self.stageChanged.emit('init')
-            logger.info('Запуск точного теста (3 прогона на разных серверах)...')
+            service = SpeedtestService(
+                on_stage=lambda s: self.stageChanged.emit(s),
+                on_log=lambda m: self.log.emit(m),
+            )
+            result = service.run_precise_test(cancel_event=self._cancel_event)
             if self._check_cancel():
                 return
-
-            # Выбираем 3 сервера
-            server_ids = self._pick_three_server_ids()
-            if len(server_ids) < 3:
-                logger.warning('Недостаточно доступных серверов для точного теста, будет использовано меньше 3.')
-
-            results: list[dict] = []
-            client = SpeedtestClient()
-
-            for idx, sid in enumerate(server_ids):
-                if self._check_cancel():
-                    return
-                self.stageChanged.emit('servers')
-                logger.info(f'[{idx+1}/3] Тест на сервере ID={sid}...')
-                # Измеряем выбранным движком
-                engine = str(self._settings.get('engine', 'python')).lower()
-                if engine == 'ookla':
-                    runner = OoklaCliClient()
-                else:
-                    runner = SpeedtestClient()
-                self.stageChanged.emit('download')
-                res = runner.perform_test(cancel_event=self._cancel_event, server_id_override=sid)
-                results.append(res)
-
-            if self._check_cancel():
-                return
-
-            # Если серверов было меньше 3 (редкий случай), дотестируем оставшиеся автоматическим выбором
-            while len(results) < 3 and not self._cancel_event.is_set():
-                self.stageChanged.emit('servers')
-                logger.info(f'[{len(results)+1}/3] Тест с автоматическим выбором сервера...')
-                engine = str(self._settings.get('engine', 'python')).lower()
-                if engine == 'ookla':
-                    runner = OoklaCliClient()
-                else:
-                    runner = SpeedtestClient()
-                self.stageChanged.emit('download')
-                res = runner.perform_test(cancel_event=self._cancel_event, server_id_override=None)
-                results.append(res)
-
-            if self._check_cancel():
-                return
-
-            self.stageChanged.emit('saving')
-            # Подсчёт среднего
-            try:
-                ping_avg = sum(float(r.get('ping_ms', 0.0)) for r in results) / max(1, len(results))
-                d_avg = sum(float(r.get('download_bps', 0.0)) for r in results) / max(1, len(results))
-                u_avg = sum(float(r.get('upload_bps', 0.0)) for r in results) / max(1, len(results))
-            except Exception:
-                ping_avg, d_avg, u_avg = 0.0, 0.0, 0.0
-
-            avg_result = {
-                'timestamp': 'avg',
-                'ping_ms': ping_avg,
-                'download_bps': d_avg,
-                'upload_bps': u_avg,
-                'aggregate': True,
-                'samples': len(results),
-            }
-
-            self.resultReady.emit(avg_result)
+            self.resultReady.emit(result)
             self.stageChanged.emit('done')
             self.finished.emit()
         except Exception as e:
