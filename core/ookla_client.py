@@ -18,9 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 class OoklaCliClient:
+    """
+    Клиент для запуска официального Ookla Speedtest CLI (speedtest.exe) и парсинга JSON-результата.
 
-    #Клиент для запуска официального Ookla Speedtest CLI (speedtest.exe) и парсинга JSON-результата.
-     #Возвращаемый формат результата совместим с ожидаемым UI/хранилищем:
+    Возвращаемый формат результата совместим с ожидаемым UI/хранилищем:
     {
       'timestamp': str,
       'ping_ms': float,
@@ -35,6 +36,7 @@ class OoklaCliClient:
       },
       'engine': 'ookla'
     }
+    """
 
     def __init__(self):
         self.settings = get_settings()

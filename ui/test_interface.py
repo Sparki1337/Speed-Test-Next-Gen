@@ -48,13 +48,11 @@ except ImportError:
 
 try:
     from ..core.worker import SpeedtestWorker, PreciseSpeedtestWorker
-    from ..core.storage import append_result
     from ..core.settings import get_settings
     from ..core.logging_system import get_logger, LogCategory
 except ImportError:
     # Запуск без пакета: импорт из локальной папки
     from core.worker import SpeedtestWorker, PreciseSpeedtestWorker  # type: ignore
-    from core.storage import append_result  # type: ignore
     from core.settings import get_settings  # type: ignore
     from core.logging_system import get_logger, LogCategory  # type: ignore
 
@@ -244,9 +242,6 @@ class TestInterface(QWidget):
         self._info('Логи очищены')
 
     def _on_result(self, result: dict):
-        # сохранение результата
-        append_result(result)
-
         # обновление UI значений
         ping = result.get('ping_ms', 0)
         d_bps = result.get('download_bps', 0.0)
@@ -294,12 +289,22 @@ class TestInterface(QWidget):
                 self.thread.quit()
                 self.thread.wait(1000)
         finally:
+            try:
+                if self.worker:
+                    self.worker.deleteLater()
+            except Exception:
+                pass
             self.thread = None
             self.worker = None
             self.startBtn.setEnabled(True)
             self.preciseBtn.setEnabled(True)
             self.stopBtn.setDisabled(True)
             self.ring.hide()
+            # Применим режим движка заново (на случай смены настроек во время теста)
+            try:
+                self._apply_engine_mode()
+            except Exception:
+                pass
 
 
 class ResultCard(QFrame):

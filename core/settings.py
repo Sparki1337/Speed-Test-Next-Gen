@@ -30,6 +30,9 @@ _DEFAULTS: Dict[str, Any] = {
     "accent_color": "blue",  # Акцентный цвет: blue | green | purple | red | orange | pink
     "max_history_records": 1000,  # Максимальное количество записей в истории
     "anonymous_mode": False,  # Анонимный режим: не сохранять историю тестов
+    # настройки логов по умолчанию
+    "log_level": "INFO",
+    "log_buffer_size": 0,
 }
 
 

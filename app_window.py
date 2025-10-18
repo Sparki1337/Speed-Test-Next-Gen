@@ -86,9 +86,17 @@ class AppWindow(FluentWindow):
         self.setWindowIcon(QIcon(':/qfluentwidgets/images/logo.png'))
         self.setWindowTitle(get_window_title())
 
-        desktop = QApplication.desktop().availableGeometry()
-        w, h = desktop.width(), desktop.height()
-        self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        try:
+            # Современный способ получить доступную геометрию экрана
+            screen = QApplication.primaryScreen()
+            geo = screen.availableGeometry() if screen else self.geometry()
+            w, h = geo.width(), geo.height()
+            self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
+        except Exception:
+            # Fallback на текущий метод
+            desktop = QApplication.desktop().availableGeometry()
+            w, h = desktop.width(), desktop.height()
+            self.move(w // 2 - self.width() // 2, h // 2 - self.height() // 2)
         
         self.logger.info("Окно настроено", data={
             'width': 980,

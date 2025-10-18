@@ -320,7 +320,10 @@ class LoggingSystem:
         
         # UI обработчик (человекочитаемый формат)
         if enable_ui and ui_emitter is not None:
-            from logging_utils import UILogHandler
+            try:
+                from ..logging_utils import UILogHandler  # при импорте как пакет
+            except Exception:  # fallback при локальном запуске из каталога
+                from logging_utils import UILogHandler  # type: ignore
             ui_handler = UILogHandler(ui_emitter)
             ui_handler.setLevel(log_level)
             ui_handler.setFormatter(HumanReadableFormatter(show_category=True))

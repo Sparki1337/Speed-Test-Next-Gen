@@ -20,7 +20,10 @@ except ImportError:
 def get_version():
     """Получить версию приложения."""
     try:
-        from version import __version__, __status__
+        try:
+            from .version import __version__, __status__  # пакетный импорт
+        except Exception:
+            from version import __version__, __status__  # fallback при запуске из каталога
         return f"{__version__} {__status__}"
     except:
         return "Unknown"
